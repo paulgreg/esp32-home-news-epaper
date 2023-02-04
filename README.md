@@ -2,6 +2,7 @@
 
 Display weather, power comsumption and agenda on an e-ink screen, powered by an esp32.
 
+That project combines previous projects into a single e-ink screen.
 
 ## Hardware
 

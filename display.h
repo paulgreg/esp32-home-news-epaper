@@ -23,8 +23,11 @@
 #define FONT_NORMAL FreeMonoBold_euro14pt8b
 #define FONT_BIG Cantarell_Bold_euro16pt8b
 
-void drawTinyTextRightAlign(int x, int y, char* text, int color) {
-  display.setFont(&FONT_TINY);
+#define WEATHER_X  0
+#define WEATHER_Y 10
+
+void drawTextRightAlign(int x, int y, char* text, int color, const GFXfont* font) {
+  display.setFont(font);
   display.setTextColor(color);
   int16_t tbx, tby; uint16_t tbw, tbh;
   display.getTextBounds(text, 0, 0, &tbx, &tby, &tbw, &tbh);
@@ -32,27 +35,9 @@ void drawTinyTextRightAlign(int x, int y, char* text, int color) {
   display.println(text);
 }
 
-void drawSmallTextCenterAlign(int x, int y, char* text, int color) {
-  display.setFont(&FONT_SMALL);
+void drawTextCenterAlign(int x, int y, char* text, int color, const GFXfont* font) {
+  display.setFont(font);
   display.setTextColor(color);
-  int16_t tbx, tby; uint16_t tbw, tbh;
-  display.getTextBounds(text, 0, 0, &tbx, &tby, &tbw, &tbh);
-  display.setCursor(x - (tbw / 2), y);
-  display.println(text);
-}
-
-void drawTextCenterAlign(int x, int y, char* text, int color) {
-  display.setFont(&FONT_NORMAL);
-  display.setTextColor(color);
-  int16_t tbx, tby; uint16_t tbw, tbh;
-  display.getTextBounds(text, 0, 0, &tbx, &tby, &tbw, &tbh);
-  display.setCursor(x - (tbw / 2), y);
-  display.println(text);
-}
-
-void drawBigTextCenterAlign(int x, int y, char* text) {
-  display.setFont(&FONT_BIG);
-  display.setTextColor(GxEPD_BLACK);
   int16_t tbx, tby; uint16_t tbw, tbh;
   display.getTextBounds(text, 0, 0, &tbx, &tby, &tbw, &tbh);
   display.setCursor(x - (tbw / 2), y);
@@ -118,13 +103,13 @@ void drawIcon(int x, int y, char* icon) {
   }
 }
 
-void displayDayMinMax(int x, char* title, char* icon, char* temp1, char* temp2, char* humidity) {
-  int centerOffset = 38;
-  drawBigTextCenterAlign(x + centerOffset, 28, title);
-  drawIcon(x, 22, icon);
-  drawTextCenterAlign(x + centerOffset, 112, temp1, GxEPD_BLACK);
-  drawTextCenterAlign(x + centerOffset, 138, temp2, GxEPD_BLACK);
-  drawSmallTextCenterAlign(x + centerOffset, 157, humidity, GxEPD_BLACK);
+void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* temp2, char* humidity) {
+  int center = 60;
+  drawTextCenterAlign(center + x,  28 + y, title, GxEPD_BLACK, &FONT_BIG);
+  drawIcon(               20 + x,  30 + y, icon);
+  drawTextRightAlign(    130 + x, 130 + y, temp1, GxEPD_BLACK, &FONT_BIG);
+  drawTextRightAlign(    130 + x, 160 + y, temp2, GxEPD_BLACK, &FONT_BIG);
+  drawTextRightAlign(    120 + x, 190 + y, humidity, GxEPD_BLACK, &FONT_NORMAL);
 }
 
 void displayWeather(Weather* weather) {
@@ -132,10 +117,10 @@ void displayWeather(Weather* weather) {
   display.firstPage();
   do
   {
-    displayDayMinMax(5, "H+1", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
-    displayDayMinMax(95, "J", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
-    displayDayMinMax(185, "J+1", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
-    drawTinyTextRightAlign(258, 173, weather->updated, GxEPD_BLACK);
+    displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
+    displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
+    displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
+    drawTextRightAlign(display.width() - 10, display.height() - 10, weather->updated, GxEPD_BLACK, &FONT_SMALL);
   } while (display.nextPage());
 }
 
@@ -150,7 +135,7 @@ void displayLocalTemp(LocalTemp* localTemp) {
   do
   {
     display.fillScreen(GxEPD_WHITE);
-    drawTextCenterAlign(x + 40, y + 24, localTemp->temp, GxEPD_BLACK);
+    drawTextCenterAlign(x + 40, y + 24, localTemp->temp, GxEPD_BLACK, &FONT_NORMAL);
   } while (display.nextPage());
 }
 

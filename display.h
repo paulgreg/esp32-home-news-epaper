@@ -13,18 +13,20 @@
 #include "icons/13d-snow.h"
 #include "icons/50d-fog.h"
 
-#include "Fonts/Cantarell_Regular_euro8pt8b.h"
 #include "Fonts/Cantarell_Bold_euro9pt8b.h"
-#include "Fonts/FreeMonoBold_euro14pt8b.h"
+#include "Fonts/Cantarell_Bold_euro12pt8b.h"
 #include "Fonts/Cantarell_Bold_euro16pt8b.h"
 
-#define FONT_TINY Cantarell_Regular_euro8pt8b
 #define FONT_SMALL Cantarell_Bold_euro9pt8b
-#define FONT_NORMAL FreeMonoBold_euro14pt8b
+#define FONT_NORMAL Cantarell_Bold_euro12pt8b
 #define FONT_BIG Cantarell_Bold_euro16pt8b
 
-#define WEATHER_X  0
-#define WEATHER_Y 10
+void drawText(int x, int y, char* text, int color, const GFXfont* font) {
+  display.setFont(font);
+  display.setTextColor(color);
+  display.setCursor(x, y);
+  display.print(text);
+}
 
 void drawTextRightAlign(int x, int y, char* text, int color, const GFXfont* font) {
   display.setFont(font);
@@ -44,6 +46,27 @@ void drawTextCenterAlign(int x, int y, char* text, int color, const GFXfont* fon
   display.println(text);
 }
 
+void displayError(char* text) {
+  int x = 0;
+  int y = display.height() - 20;
+  int w = display.width() / 2;
+  int h = 20;
+  display.setFont(&FONT_SMALL);
+  display.setTextColor(GxEPD_RED);
+  
+  display.setPartialWindow(x, y, w, h);
+  display.firstPage();
+  do
+  {
+    display.fillScreen(GxEPD_WHITE);
+    display.setCursor(x + 5, y + 12);
+    display.print(text);
+  } while (display.nextPage());
+}
+
+/*
+ * Weather
+ */
 void drawIcon(int x, int y, char* icon) {
   if (strcmp(icon, "01d") == 0) {
     // 01d - Sun
@@ -109,14 +132,16 @@ void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* 
   drawIcon(               20 + x,  30 + y, icon);
   drawTextRightAlign(    130 + x, 130 + y, temp1, GxEPD_BLACK, &FONT_BIG);
   drawTextRightAlign(    130 + x, 160 + y, temp2, GxEPD_BLACK, &FONT_BIG);
-  drawTextRightAlign(    120 + x, 190 + y, humidity, GxEPD_BLACK, &FONT_NORMAL);
+  drawTextRightAlign(    130 + x, 190 + y, humidity, GxEPD_BLACK, &FONT_NORMAL);
 }
+
+#define WEATHER_X  0
+#define WEATHER_Y 10
 
 void displayWeather(Weather* weather) {
   display.fillScreen(GxEPD_WHITE);
   display.firstPage();
-  do
-  {
+  do {
     displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
     displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
     displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
@@ -125,34 +150,68 @@ void displayWeather(Weather* weather) {
 }
 
 void displayLocalTemp(LocalTemp* localTemp) {
-  int x = 5;
-  int y = 100;
-  int w = 90;
-  int h = 38;
+  int x = WEATHER_X + 5;
+  int y = WEATHER_Y + 130;
+  int w = 150;
+  int h = 60;
   
   display.setPartialWindow(x, y, w, h);
   display.firstPage();
   do
   {
     display.fillScreen(GxEPD_WHITE);
-    drawTextCenterAlign(x + 40, y + 24, localTemp->temp, GxEPD_BLACK, &FONT_NORMAL);
+    drawTextCenterAlign(x + 40, y + 24, localTemp->temp, GxEPD_BLACK, &FONT_BIG);
   } while (display.nextPage());
 }
 
-void displayError(char* text) {
-  int x = 0;
-  int y = display.height() - 20;
-  int w = display.width() / 2;
-  int h = 20;
-  display.setFont(&FONT_SMALL);
-  display.setTextColor(GxEPD_RED);
-  
-  display.setPartialWindow(x, y, w, h);
+
+/*
+ * Calendar
+ */
+void drawDateAndCalendar(int x, int y, char* fulldate, char* cal, boolean isToday) {
+  char calendarAndDate[25];
+  char shortdate[14];
+  extractDate(fulldate, shortdate);
+  sprintf(calendarAndDate, "%s - %s", shortdate, cal);
+  drawText(x, y, calendarAndDate, isToday ? GxEPD_BLACK : GxEPD_RED, &FONT_NORMAL);
+}
+
+void drawSummary(int x, int y, char* text, boolean isToday) {
+  char summary[256];
+  sprintf(summary, "%s", text);
+
+  display.setFont(&FONT_BIG);
+  display.setTextColor(isToday ? GxEPD_BLACK : GxEPD_RED);
+  display.setCursor(x, y);
+
+  // truncate text if too long to fit in one line
+  int16_t tbx, tby; 
+  uint16_t tbw, tbh;
+  display.getTextBounds(summary, x, y, &tbx, &tby, &tbw, &tbh);
+  while (strlen(summary) > 10 && (tbw + 15) >= display.width()) {
+    summary[strlen(summary) - 1] = '\0';
+    display.getTextBounds(summary, x, y, &tbx, &tby, &tbw, &tbh);
+  }
+
+  display.print(summary);
+}
+
+#define CALENDAR_X  10
+#define CALENDAR_Y 220
+#define CALENDAR_HEIGHT 240
+
+void displayEvents(Events* events) {
+  display.setPartialWindow(0, CALENDAR_Y, display.width(), CALENDAR_HEIGHT);
+  display.fillScreen(GxEPD_WHITE);
   display.firstPage();
-  do
-  {
-    display.fillScreen(GxEPD_WHITE);
-    display.setCursor(x + 5, y + 12);
-    display.print(text);
+  do {
+    int x = CALENDAR_X;
+    int y = CALENDAR_Y + 28;
+    for (int i = 0; i < events->size; i++) {
+      drawDateAndCalendar(x, y, events->date[i], events->calendar[i], events->isToday[i]);
+      y += 28;
+      drawSummary(x, y, events->summary[i], events->isToday[i]);
+      y += 32;
+    }
   } while (display.nextPage());
 }

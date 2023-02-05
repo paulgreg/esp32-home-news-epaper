@@ -17,13 +17,19 @@ SPIClass hspi(HSPI);
 #include <HTTPClient.h>
 #include <Arduino_JSON.h>
 
-JSONVar weatherJson, localJson;
+JSONVar weatherJson;
+JSONVar eventsJson;
 
 #include "parameters.h"
+#include "events.h"
 #include "temp.h"
 #include "weather.h"
 #include "display.h"
 #include "network.h"
+
+Events events;
+
+uint currentHour = 0;
 
 const uint64_t SECOND = 1000;
 const uint64_t MINUTE = 60 * SECOND;
@@ -48,64 +54,107 @@ void setup() {
   display.setRotation(1);
 }
 
-void loop() {
-  uint64_t sleepTime = HOUR;
+boolean fetchWeatherData() {
+  uint64_t retries = MAX_RETRIES;
+  boolean jsonParsed = false;
+  while(!jsonParsed && (retries-- > 0)) {
+    delay(1000);
+    jsonParsed = getWeatherJSON();
+  }
+  if (!jsonParsed) {
+    displayError("Error:JSON-W");
+  }
+  return jsonParsed;
+}
 
+boolean fetchCalendarData() {
+  unsigned int retries = MAX_RETRIES;
+  boolean jsonParsed = false;
+  while(!jsonParsed && (retries-- > 0)) {
+    delay(1000);
+    jsonParsed = getCalendarJSON();
+  }
+  if (!jsonParsed) {
+    displayError("Error:JSON-C");
+  }
+  return jsonParsed;
+}
+
+void displayWeather() {
+  Weather weather;
+  fillWeatherFromJson(&weather);
+  displayWeather(&weather);
+  
+  char hour[3] = { weather.updated[0], weather.updated[1], '\0'};
+  currentHour = atoi(hour);
+  Serial.print("currentHour: "); Serial.println(currentHour);
+}
+
+void fetchAndDisplayLocalTemp() {
+  #ifdef RF_RX_PIN
+  // get local temperature from oregon sensor
+  retries = 500000000;
+  boolean localTemp = false;
+  OregonTHN128Data_t oregonData;
+
+  Serial.println("Try to fetch local temp");
+  while(!localTemp && (retries-- > 0)) {
+    if (OregonTHN128_Available()) {    
+      Serial.println("found");
+      Serial.println(retries);
+      OregonTHN128_Read(&oregonData);
+      printReceivedData(&oregonData);
+      localTemp = true;
+    }
+  }
+  Serial.println("End fetch local temp loop");
+
+  if (localTemp) {
+    LocalTemp localTemp;
+    fillLocalTempFromJson(&oregonData, &localTemp);
+    displayLocalTemp(&localTemp);
+  }
+  #endif
+}
+
+void displayCalendar() {
+  fillDataFromJson(eventsJson, &events);
+  displayEvents(&events);
+}
+
+void loop() {
   if (!connectToWifi()) {
     displayError("Error: WIFI");
   } else {
-    uint64_t retries = 5;
-    boolean jsonParsed = false;
-    while(!jsonParsed && (retries-- > 0)) {
-      delay(1000);
-      jsonParsed = getWeatherJSON(WEATHER_URL);
-    }
-    if (!jsonParsed) {
-      displayError("Error:JSON");
+    boolean calendarData = fetchCalendarData();
+    boolean weatherData  = fetchWeatherData();
+
+    if (weatherData) {
+      displayWeather();
     } else {
-      Weather weather;
-      fillWeatherFromJson(&weather);
-      displayWeather(&weather);
-      
-      if (weather.updated[0] == '0' && weather.updated[1] == '0') sleepTime = HOUR * 6; // sleep for the night
-
-      #ifdef RF_RX_PIN
-      // get local temperature from oregon sensor
-      retries = 500000000;
-      boolean localTemp = false;
-      OregonTHN128Data_t oregonData;
-
-      Serial.println("Try to fetch local temp");
-      while(!localTemp && (retries-- > 0)) {
-        if (OregonTHN128_Available()) {    
-          Serial.println("found");
-          Serial.println(retries);
-          OregonTHN128_Read(&oregonData);
-          printReceivedData(&oregonData);
-          localTemp = true;
-        }
-      }
-      Serial.println("End fetch local temp loop");
-
-      if (localTemp) {
-        LocalTemp localTemp;
-        fillLocalTempFromJson(&oregonData, &localTemp);
-        displayLocalTemp(&localTemp);
-      }
-      #endif
+      displayError("Error: JSON-W");
     }
+    if (calendarData) {
+      displayCalendar();
+    } else {
+      displayError("Error: JSON-C");
+    }
+
+    fetchAndDisplayLocalTemp();
+
     // disconnectFromWifi();
   }
 
-  display.powerOff();
-  display.hibernate();
-  sleep(sleepTime);
+  uint64_t sleepTime = currentHour == 0 ? HOUR * 6 : HOUR;
 
+  sleep(sleepTime);
   Serial.println("SLEEP FAILED");
   delay(HOUR);
 }
 
 void sleep(uint64_t sleepTime) {
+  display.powerOff();
+  display.hibernate();
   Serial.print("Will sleep "); 
   Serial.println(sleepTime);
   delay(SECOND);

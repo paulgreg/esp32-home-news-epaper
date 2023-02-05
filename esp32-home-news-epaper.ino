@@ -17,24 +17,23 @@ SPIClass hspi(HSPI);
 #include <HTTPClient.h>
 #include <Arduino_JSON.h>
 
-JSONVar weatherJson;
-JSONVar eventsJson;
-
 #include "parameters.h"
 #include "events.h"
 #include "temp.h"
 #include "weather.h"
+#include "linky.h"
 #include "display.h"
 #include "network.h"
-
-Events events;
-
-uint currentHour = 0;
 
 const uint64_t SECOND = 1000;
 const uint64_t MINUTE = 60 * SECOND;
 const uint64_t HOUR = 60 * MINUTE;
 const uint64_t MICRO_SEC_TO_MILLI_SEC_FACTOR = 1000;
+
+Weather weather;
+Events events;
+LinkyData daily;
+LinkyData power;
 
 void setup() {
   Serial.begin(115200);
@@ -55,53 +54,46 @@ void setup() {
 }
 
 boolean fetchWeatherData() {
-  uint64_t retries = MAX_RETRIES;
-  boolean jsonParsed = false;
-  while(!jsonParsed && (retries-- > 0)) {
-    delay(1000);
-    jsonParsed = getWeatherJSON();
+  uint retries = MAX_RETRIES;
+  boolean success = false;
+  while(!success && (retries-- > 0)) {
+    delay(RETRIES_DELAY);
+    success = getWeatherJSON(&weather);
   }
-  if (!jsonParsed) {
-    displayError("Error:JSON-W");
-  }
-  return jsonParsed;
+  return success;
 }
 
 boolean fetchCalendarData() {
-  unsigned int retries = MAX_RETRIES;
-  boolean jsonParsed = false;
-  while(!jsonParsed && (retries-- > 0)) {
-    delay(1000);
-    jsonParsed = getCalendarJSON();
+  uint retries = MAX_RETRIES;
+  boolean success = false;
+  while(!success && (retries-- > 0)) {
+    delay(RETRIES_DELAY);
+    success = getCalendarJSON(&events);
   }
-  if (!jsonParsed) {
-    displayError("Error:JSON-C");
-  }
-  return jsonParsed;
+  return success;
 }
 
-void displayWeather() {
-  Weather weather;
-  fillWeatherFromJson(&weather);
-  displayWeather(&weather);
-  
-  char hour[3] = { weather.updated[0], weather.updated[1], '\0'};
-  currentHour = atoi(hour);
-  Serial.print("currentHour: "); Serial.println(currentHour);
+boolean fetchLinkyData() {
+  uint retries = MAX_RETRIES;
+  boolean success = false;
+  while(!success && (retries-- > 0)) {
+    delay(RETRIES_DELAY);
+    success = getLinkyJSON(&daily, &power);
+  }
+  return success;
 }
 
 void fetchAndDisplayLocalTemp() {
   #ifdef RF_RX_PIN
   // get local temperature from oregon sensor
-  retries = 500000000;
+  uint64_t retries = 500000000;
   boolean localTemp = false;
   OregonTHN128Data_t oregonData;
 
   Serial.println("Try to fetch local temp");
   while(!localTemp && (retries-- > 0)) {
     if (OregonTHN128_Available()) {    
-      Serial.println("found");
-      Serial.println(retries);
+      Serial.print("found, nb of tries: "); Serial.println(retries);
       OregonTHN128_Read(&oregonData);
       printReceivedData(&oregonData);
       localTemp = true;
@@ -117,27 +109,34 @@ void fetchAndDisplayLocalTemp() {
   #endif
 }
 
-void displayCalendar() {
-  fillDataFromJson(eventsJson, &events);
-  displayEvents(&events);
-}
 
 void loop() {
   if (!connectToWifi()) {
     displayError("Error: WIFI");
   } else {
-    boolean calendarData = fetchCalendarData();
-    boolean weatherData  = fetchWeatherData();
+    boolean weatherSuccess = fetchWeatherData();
+    boolean eventsSuccess = fetchCalendarData();
+    boolean shouldRefreshLinky = true; // weather.currentHour == 13 || weather.currentHour == 14;
+    boolean linkySuccess = shouldRefreshLinky && fetchLinkyData();
 
-    if (weatherData) {
-      displayWeather();
+    if (weatherSuccess) {
+      displayWeather(&weather);
     } else {
-      displayError("Error: JSON-W");
+      displayError("Error: weather");
     }
-    if (calendarData) {
-      displayCalendar();
+
+    if (eventsSuccess) {
+      displayEvents(&events);
     } else {
-      displayError("Error: JSON-C");
+      displayError("Error: calendar");
+    }
+
+    if (shouldRefreshLinky) {
+      if (linkySuccess) {
+        // TODO display linky
+      } else {
+        displayError("Error: linky");
+      }
     }
 
     fetchAndDisplayLocalTemp();
@@ -145,7 +144,7 @@ void loop() {
     // disconnectFromWifi();
   }
 
-  uint64_t sleepTime = currentHour == 0 ? HOUR * 6 : HOUR;
+  uint64_t sleepTime = weather.currentHour == 0 ? HOUR * 6 : HOUR;
 
   sleep(sleepTime);
   Serial.println("SLEEP FAILED");

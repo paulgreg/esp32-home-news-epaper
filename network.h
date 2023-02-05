@@ -27,56 +27,72 @@ boolean disconnectFromWifi() {
   WiFi.disconnect();
 }
 
-boolean getWeatherJSON() {
-  boolean success = false;
-  
+String httpGet(const char* url, const char* login, const char* password) {
+  String s = "";
   if ((WiFi.status() == WL_CONNECTED)) {
-    Serial.print("Connecting to "); Serial.println(WEATHER_URL);
-    
+    Serial.print("Connecting to "); Serial.println(url);
     HTTPClient http;
-    http.begin(WEATHER_URL);
+    http.begin(url);
+    if (strlen(login) > 0 && strlen(password) > 0) http.setAuthorization(login, password);
     int httpCode = http.GET();
-    Serial.print("HTTP code : "); Serial.println(httpCode);
+     Serial.print("HTTP code : "); Serial.println(httpCode);
     if (httpCode > 0) {
-      weatherJson = JSON.parse(http.getString());
-      
-      if (JSON.typeof(weatherJson) == "undefined") {
-        Serial.println("Parsing weatherJson input failed!");
-      } else {
-        success = true;
-      }
+      s = http.getString();
+      Serial.print("Reponse length : "); Serial.println(s.length());
+      if (DEBUG) Serial.println(s);
     } else {
       Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
     }
     http.end();
+  }  
+  return s;
+}
+
+boolean getWeatherJSON(Weather* weather) {
+  boolean success = false;
+  String calendarStr = httpGet(WEATHER_URL, "", "");
+  JSONVar json = JSON.parse(calendarStr);
+  if (JSON.typeof(json) == "undefined") {
+    Serial.println("Parsing weatherJson input failed!");
+  } else {
+    fillWeatherFromJson(json, weather);
+    success = true;
   }
   return success;
 }
 
-
-boolean getCalendarJSON() {
+boolean getCalendarJSON(Events* events) {
   boolean success = false;
-
-  if ((WiFi.status() == WL_CONNECTED)) {
-    Serial.print("Connecting to "); Serial.println(CALENDAR_URL_EVENTS);
-    
-    HTTPClient http;
-    http.begin(CALENDAR_URL_EVENTS);
-    http.setAuthorization(CALENDAR_LOGIN, CALENDAR_PASSWORD);
-    int httpCode = http.GET();
-    Serial.print("HTTP code : "); Serial.println(httpCode);
-    if (httpCode > 0) {
-      eventsJson = JSON.parse(http.getString());
-
-      if (JSON.typeof(eventsJson) == "undefined") {
-        Serial.println("Parsing eventsJson input failed!");
-      } else {
-        success = true;
-      }
-    } else {
-      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-    }
-    http.end();
+  String calendarStr = httpGet(CALENDAR_URL_EVENTS, CALENDAR_LOGIN, CALENDAR_PASSWORD);
+  JSONVar json = JSON.parse(calendarStr);
+  if (JSON.typeof(json) == "undefined") {
+    Serial.println("Parsing eventsJson input failed!");
+  } else {
+    fillEventsFromJson(json, events);
+    success = true;
   }
   return success;
+}
+
+boolean getLinkyJSON(LinkyData* daily, LinkyData* power) {
+  boolean dailySuccess = false;
+  boolean powerSuccess = false;
+
+  String dailyStr = httpGet(LINKY_DAILY_CONSUMPTION_URL, LINK_LOGIN, LINKY_PASSWORD);
+  JSONVar json1 = JSON.parse(dailyStr);
+  if (JSON.typeof(json1) == "undefined") {
+    Serial.println("Parsing dailyJson input failed!");
+  } else {    
+    dailySuccess = fillLinkyDataFromJson(json1, daily);
+  }
+
+  String powerStr = httpGet(LINKY_MAX_POWER_URL, LINK_LOGIN, LINKY_PASSWORD);
+  JSONVar json2 = JSON.parse(powerStr);
+  if (JSON.typeof(json2) == "undefined") {
+    Serial.println("Parsing powerJson input failed!");
+  } else {
+    powerSuccess = fillLinkyDataFromJson(json2, power);
+  }
+
+  return dailySuccess && powerSuccess;
 }

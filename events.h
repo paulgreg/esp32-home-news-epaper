@@ -12,7 +12,7 @@ struct Events {
   char summary[MAX_EVENTS][256];
 };
 
-void fillDataFromJson(JSONVar json, Events* events) {
+void fillEventsFromJson(JSONVar json, Events* events) {
   int size = json.length();
   for (int i = 0; i < size && i < MAX_EVENTS; i++) {
     events->isToday[i] = json[i]["isToday"];

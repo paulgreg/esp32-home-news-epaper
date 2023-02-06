@@ -138,10 +138,7 @@ void loop() {
         displayError("Error: linky");
       }
     }
-
     fetchAndDisplayLocalTemp();
-
-    // disconnectFromWifi();
   }
 
   uint64_t sleepTime = weather.currentHour == 0 ? HOUR * 6 : HOUR;

@@ -23,10 +23,6 @@ boolean connectToWifi() {
   return true;
 }
 
-boolean disconnectFromWifi() {
-  WiFi.disconnect();
-}
-
 String httpGet(const char* url, const char* login, const char* password) {
   String s = "";
   if ((WiFi.status() == WL_CONNECTED)) {

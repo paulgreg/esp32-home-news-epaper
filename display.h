@@ -21,6 +21,8 @@
 #define FONT_NORMAL Cantarell_Bold_euro12pt8b
 #define FONT_BIG Cantarell_Bold_euro16pt8b
 
+#define EURO "\x80"
+
 void drawText(int x, int y, char* text, int color, const GFXfont* font) {
   display.setFont(font);
   display.setTextColor(color);
@@ -168,6 +170,10 @@ void displayLocalTemp(LocalTemp* localTemp) {
 /*
  * Calendar
  */
+#define CALENDAR_X  10
+#define CALENDAR_Y 220
+#define CALENDAR_HEIGHT 230
+
 void drawDateAndCalendar(int x, int y, char* fulldate, char* cal, boolean isToday) {
   char calendarAndDate[25];
   char shortdate[14];
@@ -192,13 +198,8 @@ void drawSummary(int x, int y, char* text, boolean isToday) {
     summary[strlen(summary) - 1] = '\0';
     display.getTextBounds(summary, x, y, &tbx, &tby, &tbw, &tbh);
   }
-
   display.print(summary);
 }
-
-#define CALENDAR_X  10
-#define CALENDAR_Y 220
-#define CALENDAR_HEIGHT 240
 
 void displayEvents(Events* events) {
   display.setPartialWindow(0, CALENDAR_Y, display.width(), CALENDAR_HEIGHT);
@@ -213,5 +214,89 @@ void displayEvents(Events* events) {
       drawSummary(x, y, events->summary[i], events->isToday[i]);
       y += 32;
     }
+  } while (display.nextPage());
+}
+
+
+/*
+ * Linky
+ */
+#define LINKY_X  10
+#define LINKY_Y 450
+#define LINKY_HEIGHT 160
+
+#define LINKY_STEP 46
+#define LINKY_OFFSET_X 65
+#define LINKY_MAX_Y 140
+
+void displayPrices(int offsetY, LinkyData* daily) {
+  int y = offsetY + 18;
+  drawText(14, offsetY + 18, EURO, GxEPD_BLACK, &FONT_NORMAL);
+  char price[10];
+  for (int i = 0; i < LINKY_DAYS; i++) {
+    float p = daily->values[i] * KW_H_PRICE / 1000;
+    sprintf(price, "%.1f", p);
+    // Serial.printf("price: %s\n", price);
+    int x = LINKY_OFFSET_X + i * LINKY_STEP;
+    drawText(x, y, price, p >= LINKY_PRICE_THRESHOLD ? GxEPD_BLACK : GxEPD_RED, &FONT_SMALL);
+  }
+}
+
+void displayDays(uint offsetY, LinkyData* daily) {
+  char date[3];
+  for (int i = 0; i < LINKY_DAYS; i++) {
+    if (strlen(daily->days[i]) >= 9) { // str is like yyyy-mm-dd
+      drawText(LINKY_OFFSET_X + i * LINKY_STEP, offsetY + 162, &daily->days[i][8], GxEPD_BLACK, &FONT_SMALL);
+    }
+  }
+}
+
+int mapToY (int y) {
+ int yy = y * 7;
+ int maxY = LINKY_MAX_Y;
+ int r = yy < maxY ? maxY - yy : maxY;
+ // Serial.printf("mapToY: %i ⁻> %i\n", y, r);
+ return r;
+}
+
+void displayScale(uint offsetY) {
+  char s[4];
+  Serial.println("Scale");
+  for (int i = 0; i <= 15; i+=3) {
+    int y = offsetY + mapToY(i);
+    sprintf(s, "%2dk", i);
+    drawText(10, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
+    display.fillRect(50, y, 420, 2, GxEPD_RED);
+  }
+}
+
+void displayConsumption(uint offsetY, LinkyData* daily) {
+  for (int i = 0; i < LINKY_DAYS; i++) {
+    int value = daily->values[i] / 1000;
+    int x = LINKY_OFFSET_X + 10 + i * LINKY_STEP;
+    int y = offsetY + mapToY(value);
+    display.fillRect(x, y, 12, (offsetY + LINKY_MAX_Y) - y, GxEPD_BLACK);
+  }
+}
+
+void displayMaxPower(uint offsetY, LinkyData* power) {
+  for (int i = 0; i < LINKY_DAYS; i++) {
+    int value = power->values[i] / 1000;
+    int x = LINKY_OFFSET_X + i * LINKY_STEP;
+    int y = offsetY + mapToY(value);
+    display.fillRect(x, y, 6, (offsetY + LINKY_MAX_Y) - y, GxEPD_RED);
+  }
+}
+
+void displayData(LinkyData* daily, LinkyData* power) {
+  display.setPartialWindow(0, LINKY_Y, display.width(), LINKY_HEIGHT);
+  display.fillScreen(GxEPD_WHITE);
+  display.firstPage();
+  do {
+    displayScale(LINKY_Y);
+    displayDays(LINKY_Y, daily);
+    displayPrices(LINKY_Y, daily);
+    displayConsumption(LINKY_Y, daily);
+    displayMaxPower(LINKY_Y, power);
   } while (display.nextPage());
 }

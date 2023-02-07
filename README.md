@@ -1,26 +1,36 @@
 # ESP32 home news epaper
 
-Display weather, power comsumption and agenda on an e-ink screen, powered by an esp32.
+A display showing weather (current, today and tomorrow), agenda & power comsumption (for french Linky service) on an e-ink screen, powered by an esp32.
 
-That project combines previous projects into a single e-ink screen.
+That project combines previous projects into a single e-ink screen :
+
+  * [IoT eink Weather Station](https://hackaday.io/project/171910-iot-eink-weather-station)
+  * [esp32next-calendar-events](https://github.com/paulgreg/esp32-next-calendar-events)
+  * [Linky Daily Consumption](https://hackaday.io/project/177065-linky-daily-consumption)
+
+
+Weather is fetched from [Open Weather Map](https://openweathermap.org/). You’ll need to create an account to get an API key.
+
+The « agenda » and power consumption needs JSON produced and served on a server :
+- [next-calendar-events-server](https://github.com/paulgreg/next-calendar-events-server) to fetch and format agenda events,
+- [bokub/linky](https://github.com/bokub/linky), launched daily to produces daily consumption and max power files.
+
+You’ll need to copy `parameters.h.dist` to `parameters.h` and change it to your needs.
 
 ## Hardware
 
-  * ESP32: https://www.waveshare.com/product/e-paper-esp32-driver-board.htm
-  * Screen : GDEW0583Z83 5.83" b/w/r 648x480, EK79655 (GD7965)
-  * https://www.waveshare.com/5.83inch-e-paper-b.htm
+  * [WaveShare ESP32 Driver Board](https://www.waveshare.com/product/e-paper-esp32-driver-board.htm)
+  * [5.83" b/w/r e-ink screen](https://www.waveshare.com/5.83inch-e-paper-b.htm) GDEW0583Z83 648x480, EK79655 (GD7965)
 
+### Mapping of Waveshare ESP32 Driver Board
 
-mapping of Waveshare ESP32 Driver Board
-BUSY -> 25, RST -> 26, DC -> 27, CS-> 15, CLK -> 13, DIN -> 14
-
-NOTE: this board uses "unusual" SPI pins and requires re-mapping of HW SPI to these pins in SPIClass
-The Wavehare ESP32 Driver Board uses uncommon SPI pins for the FPC connector. It uses HSPI pins, but SCK and MOSI are swapped.
-To use HW SPI with the ESP32 Driver Board, HW SPI pins need be re-mapped in any case. Can be done using either HSPI or VSPI.
-Other SPI clients can either be connected to the same SPI bus as the e-paper, or to the other HW SPI bus, or through SW SPI.
-The logical configuration would be to use the e-paper connection on HSPI with re-mapped pins, and use VSPI for other SPI clients.
-VSPI with standard VSPI pins is used by the global SPI instance of the Arduino IDE ESP32 package.
+  - BUSY -> 25
+  - RST -> 26
+  - DC -> 27
+  - CS-> 15
+  - CLK -> 13 
+  - DIN -> 14
 
 ## Software
 
-  * https://github.com/ZinggJM/GxEPD2
+That project is made possible by amazing [ZinggJM/GxEPD2](https://github.com/ZinggJM/GxEPD2) and wonderful [bokub/linky](https://github.com/bokub/linky) Open Source projects. Thanks

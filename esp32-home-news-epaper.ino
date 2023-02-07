@@ -121,6 +121,7 @@ void loop() {
 
     if (weatherSuccess) {
       displayWeather(&weather);
+      displayUpdatedTime(&weather);
     } else {
       displayError("Error: weather");
     }
@@ -140,7 +141,6 @@ void loop() {
     }
     fetchAndDisplayLocalTemp();
   }
-
   uint64_t sleepTime = weather.currentHour == 0 ? HOUR * 6 : HOUR;
 
   sleep(sleepTime);

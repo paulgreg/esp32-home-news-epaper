@@ -49,21 +49,25 @@ void drawTextCenterAlign(int x, int y, char* text, int color, const GFXfont* fon
 }
 
 void displayError(char* text) {
-  int x = 0;
-  int y = display.height() - 20;
-  int w = display.width() / 2;
   int h = 20;
+  int x = 0;
+  int y = display.height() - h;
+  int w = display.width() / 2;
+
   display.setFont(&FONT_SMALL);
   display.setTextColor(GxEPD_RED);
   
   display.setPartialWindow(x, y, w, h);
   display.firstPage();
-  do
-  {
+  do {
     display.fillScreen(GxEPD_WHITE);
-    display.setCursor(x + 5, y + 12);
+    display.setCursor(x + 10, y + 10);
     display.print(text);
   } while (display.nextPage());
+}
+
+void drawLine(uint y) {
+  display.fillRect(0, y - 1, display.width(), 1, GxEPD_BLACK);
 }
 
 /*
@@ -138,17 +142,30 @@ void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* 
 }
 
 #define WEATHER_X  0
-#define WEATHER_Y 10
+#define WEATHER_Y 0
+#define WEATHER_HEIGHT 202
 
 void displayWeather(Weather* weather) {
+  if (weather->currentHour != 12) { // Partial refresh most of the time
+    display.setPartialWindow(WEATHER_X, 0, display.width(), WEATHER_HEIGHT);
+  }
   display.fillScreen(GxEPD_WHITE);
   display.firstPage();
   do {
     displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
     displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
     displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
-    drawTextRightAlign(display.width() - 10, display.height() - 10, weather->updated, GxEPD_BLACK, &FONT_SMALL);
+    drawLine(WEATHER_Y + WEATHER_HEIGHT - 2);
   } while (display.nextPage());
+}
+
+void displayUpdatedTime(Weather* weather) {
+  display.setPartialWindow(0, display.height() - 20, display.width(), display.height());
+  display.fillScreen(GxEPD_WHITE);
+  display.firstPage();
+  do {
+    drawTextRightAlign(display.width() - 10, display.height() - 10, weather->updated, GxEPD_BLACK, &FONT_SMALL);
+  } while (display.nextPage());  
 }
 
 void displayLocalTemp(LocalTemp* localTemp) {
@@ -170,10 +187,6 @@ void displayLocalTemp(LocalTemp* localTemp) {
 /*
  * Calendar
  */
-#define CALENDAR_X  10
-#define CALENDAR_Y 220
-#define CALENDAR_HEIGHT 230
-
 void drawDateAndCalendar(int x, int y, char* fulldate, char* cal, boolean isToday) {
   char calendarAndDate[25];
   char shortdate[14];
@@ -201,19 +214,24 @@ void drawSummary(int x, int y, char* text, boolean isToday) {
   display.print(summary);
 }
 
+#define CALENDAR_X  10
+#define CALENDAR_Y WEATHER_Y + WEATHER_HEIGHT + 2
+#define CALENDAR_HEIGHT 238
+
 void displayEvents(Events* events) {
   display.setPartialWindow(0, CALENDAR_Y, display.width(), CALENDAR_HEIGHT);
   display.fillScreen(GxEPD_WHITE);
   display.firstPage();
   do {
     int x = CALENDAR_X;
-    int y = CALENDAR_Y + 28;
+    int y = CALENDAR_Y + 22;
     for (int i = 0; i < events->size; i++) {
       drawDateAndCalendar(x, y, events->date[i], events->calendar[i], events->isToday[i]);
       y += 28;
       drawSummary(x, y, events->summary[i], events->isToday[i]);
-      y += 32;
+      y += 30;
     }
+    drawLine(CALENDAR_Y + CALENDAR_HEIGHT - 2);
   } while (display.nextPage());
 }
 
@@ -222,15 +240,15 @@ void displayEvents(Events* events) {
  * Linky
  */
 #define LINKY_X  10
-#define LINKY_Y 450
-#define LINKY_HEIGHT 160
+#define LINKY_Y CALENDAR_Y + CALENDAR_HEIGHT + 4
+#define LINKY_HEIGHT 172
 
 #define LINKY_STEP 46
 #define LINKY_OFFSET_X 65
 #define LINKY_MAX_Y 140
 
 void displayPrices(int offsetY, LinkyData* daily) {
-  int y = offsetY + 18;
+  int y = offsetY + 16;
   drawText(14, offsetY + 18, EURO, GxEPD_BLACK, &FONT_NORMAL);
   char price[10];
   for (int i = 0; i < LINKY_DAYS; i++) {
@@ -246,7 +264,7 @@ void displayDays(uint offsetY, LinkyData* daily) {
   char date[3];
   for (int i = 0; i < LINKY_DAYS; i++) {
     if (strlen(daily->days[i]) >= 9) { // str is like yyyy-mm-dd
-      drawText(LINKY_OFFSET_X + i * LINKY_STEP, offsetY + 162, &daily->days[i][8], GxEPD_BLACK, &FONT_SMALL);
+      drawText(LINKY_OFFSET_X + i * LINKY_STEP, offsetY + 160, &daily->days[i][8], GxEPD_BLACK, &FONT_SMALL);
     }
   }
 }
@@ -298,5 +316,6 @@ void displayData(LinkyData* daily, LinkyData* power) {
     displayPrices(LINKY_Y, daily);
     displayConsumption(LINKY_Y, daily);
     displayMaxPower(LINKY_Y, power);
+    drawLine(LINKY_Y + LINKY_HEIGHT - 2);
   } while (display.nextPage());
 }

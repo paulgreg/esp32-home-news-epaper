@@ -169,9 +169,9 @@ void displayUpdatedTime(Weather* weather) {
 }
 
 void displayLocalTemp(LocalTemp* localTemp) {
-  int x = WEATHER_X + 5;
-  int y = WEATHER_Y + 130;
-  int w = 150;
+  int x = WEATHER_X;
+  int y = WEATHER_Y + 110;
+  int w = 155;
   int h = 60;
   
   display.setPartialWindow(x, y, w, h);
@@ -179,7 +179,7 @@ void displayLocalTemp(LocalTemp* localTemp) {
   do
   {
     display.fillScreen(GxEPD_WHITE);
-    drawTextCenterAlign(x + 40, y + 24, localTemp->temp, GxEPD_BLACK, &FONT_BIG);
+    drawTextCenterAlign(x + (w / 2), y + 45, localTemp->temp, GxEPD_BLACK, &FONT_BIG);
   } while (display.nextPage());
 }
 

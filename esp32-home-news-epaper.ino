@@ -87,21 +87,22 @@ void fetchAndDisplayLocalTemp() {
   #ifdef RF_RX_PIN
   // get local temperature from oregon sensor
   uint64_t retries = 500000000;
-  boolean localTemp = false;
+  boolean foundLocalTemp = false;
   OregonTHN128Data_t oregonData;
 
   Serial.println("Try to fetch local temp");
-  while(!localTemp && (retries-- > 0)) {
+  while(!foundLocalTemp && (retries-- > 0)) {
     if (OregonTHN128_Available()) {    
       Serial.print("found, nb of tries: "); Serial.println(retries);
       OregonTHN128_Read(&oregonData);
       printReceivedData(&oregonData);
-      localTemp = true;
+      foundLocalTemp = true;
     }
   }
+
   Serial.println("End fetch local temp loop");
 
-  if (localTemp) {
+  if (foundLocalTemp) {
     LocalTemp localTemp;
     fillLocalTempFromJson(&oregonData, &localTemp);
     displayLocalTemp(&localTemp);

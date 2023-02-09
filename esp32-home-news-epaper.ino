@@ -142,7 +142,7 @@ void loop() {
     }
     fetchAndDisplayLocalTemp();
   }
-  uint64_t sleepTime = weather.currentHour == 0 ? HOUR * 6 : HOUR;
+  uint64_t sleepTime = weather.currentHour == 23 ? HOUR * 7 : HOUR;
 
   sleep(sleepTime);
   Serial.println("SLEEP FAILED");

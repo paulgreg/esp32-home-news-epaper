@@ -138,7 +138,7 @@ void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* 
   drawIcon(               20 + x,  30 + y, icon);
   drawTextRightAlign(    130 + x, 130 + y, temp1, GxEPD_BLACK, &FONT_BIG);
   drawTextRightAlign(    130 + x, 160 + y, temp2, GxEPD_BLACK, &FONT_BIG);
-  drawTextRightAlign(    130 + x, 190 + y, humidity, GxEPD_BLACK, &FONT_NORMAL);
+  drawTextCenterAlign(center + x, 190 + y, humidity, GxEPD_BLACK, &FONT_NORMAL);
 }
 
 #define WEATHER_X  0
@@ -172,14 +172,14 @@ void displayLocalTemp(LocalTemp* localTemp) {
   int x = WEATHER_X;
   int y = WEATHER_Y + 110;
   int w = 155;
-  int h = 60;
+  int h = 56;
   
   display.setPartialWindow(x, y, w, h);
   display.firstPage();
   do
   {
     display.fillScreen(GxEPD_WHITE);
-    drawTextCenterAlign(x + (w / 2), y + 45, localTemp->temp, GxEPD_BLACK, &FONT_BIG);
+    drawTextCenterAlign(x + 84, y + 38, localTemp->temp, GxEPD_BLACK, &FONT_BIG);
   } while (display.nextPage());
 }
 

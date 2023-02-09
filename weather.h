@@ -15,7 +15,7 @@ struct Weather {
   char humidityD1[6];
 
   char updated[20];
-  uint currentHour;
+  uint currentHour = 0;
 };
 
 void fillWeatherFromJson(JSONVar json, Weather* weather) {

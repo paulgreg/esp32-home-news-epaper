@@ -146,7 +146,7 @@ void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* 
 #define WEATHER_HEIGHT 202
 
 void displayWeather(Weather* weather) {
-  if (weather->currentHour != 12) { // Partial refresh most of the time
+  if (weather->currentHour != 13) { // Partial refresh most of the time
     display.setPartialWindow(WEATHER_X, 0, display.width(), WEATHER_HEIGHT);
   }
   display.fillScreen(GxEPD_WHITE);

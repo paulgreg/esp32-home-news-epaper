@@ -192,26 +192,13 @@ void drawDateAndCalendar(int x, int y, char* fulldate, char* cal, boolean isToda
   char shortdate[14];
   extractDate(fulldate, shortdate);
   sprintf(calendarAndDate, "%s - %s", shortdate, cal);
-  drawText(x, y, calendarAndDate, isToday ? GxEPD_BLACK : GxEPD_RED, &FONT_NORMAL);
+  drawTextCenterAlign(x, y, calendarAndDate, isToday ? GxEPD_BLACK : GxEPD_RED, &FONT_NORMAL);
 }
 
 void drawSummary(int x, int y, char* text, boolean isToday) {
-  char summary[256];
-  sprintf(summary, "%s", text);
-
-  display.setFont(&FONT_BIG);
-  display.setTextColor(isToday ? GxEPD_BLACK : GxEPD_RED);
-  display.setCursor(x, y);
-
-  // truncate text if too long to fit in one line
-  int16_t tbx, tby; 
-  uint16_t tbw, tbh;
-  display.getTextBounds(summary, x, y, &tbx, &tby, &tbw, &tbh);
-  while (strlen(summary) > 10 && (tbw + 15) >= display.width()) {
-    summary[strlen(summary) - 1] = '\0';
-    display.getTextBounds(summary, x, y, &tbx, &tby, &tbw, &tbh);
-  }
-  display.print(summary);
+  char summary[64];
+  strncpy(summary, text, 63);
+  drawTextCenterAlign(x, y, summary, isToday ? GxEPD_BLACK : GxEPD_RED, &FONT_BIG);
 }
 
 #define CALENDAR_X  10
@@ -222,13 +209,14 @@ void displayEvents(Events* events) {
   display.setPartialWindow(0, CALENDAR_Y, display.width(), CALENDAR_HEIGHT);
   display.fillScreen(GxEPD_WHITE);
   display.firstPage();
+  uint middleX = display.width() / 2;
   do {
     int x = CALENDAR_X;
     int y = CALENDAR_Y + 22;
     for (int i = 0; i < events->size; i++) {
-      drawDateAndCalendar(x, y, events->date[i], events->calendar[i], events->isToday[i]);
+      drawDateAndCalendar(middleX, y, events->date[i], events->calendar[i], events->isToday[i]);
       y += 28;
-      drawSummary(x, y, events->summary[i], events->isToday[i]);
+      drawSummary(middleX, y, events->summary[i], events->isToday[i]);
       y += 30;
     }
     drawLine(CALENDAR_Y + CALENDAR_HEIGHT - 2);
@@ -249,7 +237,7 @@ void displayEvents(Events* events) {
 
 void displayPrices(int offsetY, LinkyData* daily) {
   int y = offsetY + 16;
-  drawText(14, offsetY + 18, EURO, GxEPD_BLACK, &FONT_NORMAL);
+  drawText(18, offsetY + 18, EURO, GxEPD_BLACK, &FONT_NORMAL);
   char price[10];
   for (int i = 0; i < LINKY_DAYS; i++) {
     float p = daily->values[i] * KW_H_PRICE / 1000;
@@ -283,7 +271,7 @@ void displayScale(uint offsetY) {
   for (int i = 0; i <= 15; i+=3) {
     int y = offsetY + mapToY(i);
     sprintf(s, "%2dk", i);
-    drawText(10, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
+    drawText(16, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
     display.fillRect(50, y, 420, 2, GxEPD_RED);
   }
 }

@@ -33,11 +33,13 @@ void extractDate (char* str, char* date) { // str is like 2021-09-25T00:00:00
     date[ 5] = '\0';
   } else {
     date[ 5] = ' ';
-    date[ 6] = str[11];
-    date[ 7] = str[12];
-    date[ 8] = str[13];
-    date[ 9] = str[14];
-    date[10] = str[15];
-    date[11] = '\0';
+    date[ 6] = '-';
+    date[ 7] = ' ';
+    date[ 8] = str[11];
+    date[ 9] = str[12];
+    date[10] = str[13];
+    date[11] = str[14];
+    date[12] = str[15];
+    date[13] = '\0';
   }
 }

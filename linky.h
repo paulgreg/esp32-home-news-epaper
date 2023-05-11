@@ -1,29 +1,3 @@
-/* Daily.json
-{
-    "unit": "Wh",
-    "data": [
-        {
-            "date": "2021-01-17",
-            "value": 3500
-        },
-        ...
-    ]
-}
-*/
-
-/* maxpower.json
-{
-    "unit": "VA",
-    "data": [
-        {
-            "date": "2021-01-17 09:22:00",
-            "value": 3500
-        },
- 
-    ]
-}
-*/
-
 struct LinkyData {
   char unit[10];
   char days[LINKY_DAYS][30];
@@ -31,25 +5,44 @@ struct LinkyData {
 };
 
 boolean fillLinkyDataFromJson(JSONVar json, LinkyData* data) {
-  if (!json.hasOwnProperty("unit")) {
-    Serial.println("fillDataFromJson: unit key not found");
+  if (!json.hasOwnProperty("reading_type")) {
+    Serial.println("fillDataFromJson: reading_type key not found");
     return false;
   }
-  if (!json.hasOwnProperty("data")) {
-    Serial.println("fillDataFromJson: data key not found");
+  if (!json.hasOwnProperty("interval_reading")) {
+    Serial.println("fillDataFromJson: interval_reading key not found");
     return false;
   }
-  
-  sprintf(data->unit, "%s", (const char*) json["unit"]);
-  int size = json["data"].length();
-  
+
+  sprintf(data->unit, "%s", (const char*) json["reading_type"]["unit"]);
+  int size = json["interval_reading"].length();
+
   Serial.printf("linky data length: %i\n", size);
   if (size < LINKY_DAYS) return false;
-  
+
   for (int i = 0, id = size - LINKY_DAYS; i < LINKY_DAYS; i++, id++) {
-    sprintf(data->days[i], "%s", (const char*) json["data"][id]["date"]);
-    data->values[i] = (unsigned int) int(json["data"][id]["value"]);
+    sprintf(data->days[i], "%s", (const char*) json["interval_reading"][id]["date"]);
+    data->values[i] = atoi((const char*) json["interval_reading"][id]["value"]);
+    Serial.printf("linky[%i] - %s -> %i\n", id, data->days[i], data->values[i]);
   }
+  Serial.printf("Parsing end\n");
   return true;
 }
 
+/* Daily.json
+{
+  "start": "2023-04-26",
+  "end": "2023-05-11",
+  "quality": "BRUT",
+  "reading_type": {
+    "unit": "Wh",
+    "measurement_kind": "energy",
+    "aggregate": "sum",
+    "measuring_period": "P1D"
+  },
+  "interval_reading": [
+    {
+      "value": "5918",
+      "date": "2023-04-26"
+    },...
+*/

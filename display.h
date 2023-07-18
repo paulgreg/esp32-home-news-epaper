@@ -235,14 +235,14 @@ void displayEvents(Events* events) {
 #define LINKY_OFFSET_X 65
 #define LINKY_MAX_Y 140
 
-void displayPrices(int offsetY, LinkyData* daily) {
+void displayPrices(int offsetY, LinkyData* daily, double kmWPerHourPrice) {
   int y = offsetY + 16;
   drawText(18, offsetY + 18, EURO, GxEPD_BLACK, &FONT_NORMAL);
   char price[10];
   for (int i = 0; i < LINKY_DAYS; i++) {
-    float p = daily->values[i] * KW_H_PRICE / 1000;
-    sprintf(price, "%.1f", p);
-    // Serial.printf("price: %s\n", price);
+    double p = daily->values[i] * kmWPerHourPrice / 1000;
+    sprintf(price, "%.1lf", p);
+    Serial.printf("price: %s\n", price);
     int x = LINKY_OFFSET_X + i * LINKY_STEP;
     drawText(x, y, price, p >= LINKY_PRICE_THRESHOLD ? GxEPD_BLACK : GxEPD_RED, &FONT_SMALL);
   }
@@ -294,14 +294,14 @@ void displayMaxPower(uint offsetY, LinkyData* power) {
   }
 }
 
-void displayData(LinkyData* daily, LinkyData* power) {
+void displayLinkyData(LinkyData* daily, LinkyData* power, LinkyMetaData* metadata) {
   display.setPartialWindow(0, LINKY_Y, display.width(), LINKY_HEIGHT);
   display.fillScreen(GxEPD_WHITE);
   display.firstPage();
   do {
     displayScale(LINKY_Y);
     displayDays(LINKY_Y, daily);
-    displayPrices(LINKY_Y, daily);
+    displayPrices(LINKY_Y, daily, metadata->price);
     displayConsumption(LINKY_Y, daily);
     displayMaxPower(LINKY_Y, power);
     drawLine(LINKY_Y + LINKY_HEIGHT - 2);

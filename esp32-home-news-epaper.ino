@@ -34,6 +34,7 @@ Weather weather;
 Events events;
 LinkyData daily;
 LinkyData power;
+LinkyMetaData metadata;
 
 void setup() {
   Serial.begin(115200);
@@ -78,7 +79,7 @@ boolean fetchLinkyData() {
   boolean success = false;
   while(!success && (retries-- > 0)) {
     delay(RETRIES_DELAY);
-    success = getLinkyJSON(&daily, &power);
+    success = getLinkyJSON(&daily, &power, &metadata);
   }
   return success;
 }
@@ -135,7 +136,7 @@ void loop() {
 
     if (shouldRefreshLinky) {
       if (linkySuccess) {
-        displayData(&daily, &power);
+        displayLinkyData(&daily, &power, &metadata);
       } else {
         displayError("Error: linky");
       }

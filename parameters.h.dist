@@ -16,9 +16,9 @@
 
 #define LINKY_DAILY_CONSUMPTION_URL "url-to-linky-daily-consumption"
 #define LINKY_MAX_POWER_URL "url-to-linky-maxpower"
+#define LINKY_PRICE_URL "url-to-link-price"
 #define LINK_LOGIN "login"
 #define LINKY_PASSWORD "password"
 #define LINKY_DAYS 9
 #define LINKY_PRICE_THRESHOLD 1.5
-#define KW_H_PRICE 0.206
 

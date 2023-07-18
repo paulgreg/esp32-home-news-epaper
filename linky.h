@@ -4,13 +4,18 @@ struct LinkyData {
   unsigned int values[LINKY_DAYS];
 };
 
+struct LinkyMetaData {
+  double price;
+};
+
+
 boolean fillLinkyDataFromJson(JSONVar json, LinkyData* data) {
   if (!json.hasOwnProperty("reading_type")) {
-    Serial.println("fillDataFromJson: reading_type key not found");
+    Serial.println("fillLinkyDataFromJson: reading_type key not found");
     return false;
   }
   if (!json.hasOwnProperty("interval_reading")) {
-    Serial.println("fillDataFromJson: interval_reading key not found");
+    Serial.println("fillLinkyDataFromJson: interval_reading key not found");
     return false;
   }
 
@@ -26,6 +31,21 @@ boolean fillLinkyDataFromJson(JSONVar json, LinkyData* data) {
     Serial.printf("linky[%i] - %s -> %i\n", id, data->days[i], data->values[i]);
   }
   Serial.printf("Parsing end\n");
+  return true;
+}
+
+boolean fillLinkyMetaDataFromJson(JSONVar json, LinkyMetaData* data) {
+  if (!json.hasOwnProperty("price")) {
+    Serial.println("fillLinkyMetaDataFromJson: price key not found");
+    return false;
+  }
+
+  double price;
+  sscanf(json["price"], "%lf", &price);
+  data->price = price;
+  Serial.println("Price");
+  Serial.println(data->price);
+
   return true;
 }
 

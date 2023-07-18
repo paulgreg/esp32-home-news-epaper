@@ -13,7 +13,7 @@ Weather is fetched from [Open Weather Map](https://openweathermap.org/). You’l
 
 The « agenda » and power consumption needs JSON produced and served on a server :
 - [next-calendar-events-server](https://github.com/paulgreg/next-calendar-events-server) to fetch and format agenda events,
-- [bokub/linky](https://github.com/bokub/linky), launched daily to produces daily consumption and max power files.
+- [bokub/linky](https://github.com/bokub/linky), launched daily to produces daily consumption and max power files. You will also need a price.json file containing `{ "price": "0.23" }` 
 
 You’ll need to copy `parameters.h.dist` to `parameters.h` and change it to your needs.
 

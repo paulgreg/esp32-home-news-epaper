@@ -70,9 +70,11 @@ boolean getCalendarJSON(Events* events) {
   return success;
 }
 
-boolean getLinkyJSON(LinkyData* daily, LinkyData* power) {
+boolean getLinkyJSON(LinkyData* daily, LinkyData* power, LinkyMetaData* meta) {
   boolean dailySuccess = false;
   boolean powerSuccess = false;
+  boolean metaSuccess = false;
+
 
   String dailyStr = httpGet(LINKY_DAILY_CONSUMPTION_URL, LINK_LOGIN, LINKY_PASSWORD);
   JSONVar json1 = JSON.parse(dailyStr);
@@ -90,5 +92,13 @@ boolean getLinkyJSON(LinkyData* daily, LinkyData* power) {
     powerSuccess = fillLinkyDataFromJson(json2, power);
   }
 
-  return dailySuccess && powerSuccess;
+  String metaStr = httpGet(LINKY_PRICE_URL, LINK_LOGIN, LINKY_PASSWORD);
+  JSONVar json3 = JSON.parse(metaStr);
+  if (JSON.typeof(json3) == "undefined") {
+    Serial.println("Parsing priceJson input failed!");
+  } else {
+    metaSuccess = fillLinkyMetaDataFromJson(json3, meta);
+  }
+
+  return dailySuccess && powerSuccess && metaSuccess;
 }

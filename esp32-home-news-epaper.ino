@@ -118,8 +118,7 @@ void loop() {
   } else {
     boolean weatherSuccess = fetchWeatherData();
     boolean eventsSuccess = fetchCalendarData();
-    boolean shouldRefreshLinky = weather.currentHour == 13 || weather.currentHour == 14;
-    boolean linkySuccess = shouldRefreshLinky && fetchLinkyData();
+    boolean linkySuccess = fetchLinkyData();
 
     if (weatherSuccess) {
       displayWeather(&weather);
@@ -134,12 +133,10 @@ void loop() {
       displayError("Error: calendar");
     }
 
-    if (shouldRefreshLinky) {
-      if (linkySuccess) {
-        displayLinkyData(&daily, &power, &metadata);
-      } else {
-        displayError("Error: linky");
-      }
+    if (linkySuccess) {
+      displayLinkyData(&daily, &power, &metadata);
+    } else {
+      displayError("Error: linky");
     }
     fetchAndDisplayLocalTemp();
   }

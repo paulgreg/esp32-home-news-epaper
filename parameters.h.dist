@@ -5,7 +5,7 @@
 #define MAX_RETRIES 5
 #define RETRIES_DELAY 1000
 
-#define WEATHER_URL "https://api.openweathermap.org/data/2.5/onecall?units=metric&exclude=minutely,hourly&appid=API_KEY&lat=LAT&lon=LNG&lang=en"
+#define WEATHER_URL "https://api.openweathermap.org/data/3.0/onecall?units=metric&exclude=minutely,hourly&appid=API_KEY&lat=LAT&lon=LNG&lang=en"
 // to display local temperature from an Oregon Scientific sensor, uncomment line below (a RF module 433Mhz is mandatory)
 // #define RF_RX_PIN 5
 

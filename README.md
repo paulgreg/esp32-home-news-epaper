@@ -13,7 +13,7 @@ Weather is fetched from [Open Weather Map](https://openweathermap.org/). You’l
 
 The « agenda » and power consumption needs JSON produced and served on a server :
 - [next-calendar-events-server](https://github.com/paulgreg/next-calendar-events-server) to fetch and format agenda events,
-- [bokub/linky](https://github.com/bokub/linky), launched daily to produces daily consumption and max power files. You will also need a price.json file containing `{ "price": "0.23" }` 
+- [bokub/linky](https://github.com/bokub/linky), launched daily to produces daily consumption and max power files. You will also need a price.json file containing `{ "price": "0.23" }`
 
 You’ll need to copy `parameters.h.dist` to `parameters.h` and change it to your needs.
 
@@ -21,6 +21,8 @@ You’ll need to copy `parameters.h.dist` to `parameters.h` and change it to you
 
   * [WaveShare ESP32 Driver Board](https://www.waveshare.com/product/e-paper-esp32-driver-board.htm)
   * [5.83" b/w/r e-ink screen](https://www.waveshare.com/5.83inch-e-paper-b.htm) GDEW0583Z83 648x480, EK79655 (GD7965)
+  * 433 Mhz Superheterodyne RF Receiver Module
+
 
 ### Mapping of Waveshare ESP32 Driver Board
 
@@ -28,8 +30,14 @@ You’ll need to copy `parameters.h.dist` to `parameters.h` and change it to you
   - RST -> 26
   - DC -> 27
   - CS-> 15
-  - CLK -> 13 
+  - CLK -> 13
   - DIN -> 14
+
+### 433 Mhz transmitter mapping
+
+  - pin 34 to D0
+  - 3v3
+  - GND
 
 ## Software
 

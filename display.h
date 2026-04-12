@@ -149,9 +149,9 @@ void displayWeather(Weather* weather) {
   if (weather->currentHour != 13) { // Partial refresh most of the time
     display.setPartialWindow(WEATHER_X, 0, display.width(), WEATHER_HEIGHT);
   }
-  display.fillScreen(GxEPD_WHITE);
   display.firstPage();
   do {
+    display.fillScreen(GxEPD_WHITE);
     displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
     displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
     displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
@@ -161,9 +161,9 @@ void displayWeather(Weather* weather) {
 
 void displayUpdatedTime(Weather* weather) {
   display.setPartialWindow(0, display.height() - 20, display.width(), display.height());
-  display.fillScreen(GxEPD_WHITE);
   display.firstPage();
   do {
+    display.fillScreen(GxEPD_WHITE);
     drawTextRightAlign(display.width() - 10, display.height() - 10, weather->updated, GxEPD_BLACK, &FONT_SMALL);
   } while (display.nextPage());  
 }
@@ -176,8 +176,7 @@ void displayLocalTemp(LocalTemp* localTemp) {
   
   display.setPartialWindow(x, y, w, h);
   display.firstPage();
-  do
-  {
+  do {
     display.fillScreen(GxEPD_WHITE);
     drawTextCenterAlign(x + 84, y + 38, localTemp->temp, GxEPD_BLACK, &FONT_BIG);
   } while (display.nextPage());
@@ -207,10 +206,10 @@ void drawSummary(int x, int y, char* text, boolean isToday) {
 
 void displayEvents(Events* events) {
   display.setPartialWindow(0, CALENDAR_Y, display.width(), CALENDAR_HEIGHT);
-  display.fillScreen(GxEPD_WHITE);
   display.firstPage();
   uint middleX = display.width() / 2;
   do {
+    display.fillScreen(GxEPD_WHITE);
     int x = CALENDAR_X;
     int y = CALENDAR_Y + 22;
     for (int i = 0; i < events->size; i++) {
@@ -296,9 +295,9 @@ void displayMaxPower(uint offsetY, LinkyData* power) {
 
 void displayLinkyData(LinkyData* daily, LinkyData* power, LinkyMetaData* metadata) {
   display.setPartialWindow(0, LINKY_Y, display.width(), LINKY_HEIGHT);
-  display.fillScreen(GxEPD_WHITE);
   display.firstPage();
   do {
+    display.fillScreen(GxEPD_WHITE);
     displayScale(LINKY_Y);
     displayDays(LINKY_Y, daily);
     displayPrices(LINKY_Y, daily, metadata->price);

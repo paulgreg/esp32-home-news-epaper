@@ -11,7 +11,6 @@
 
 GxEPD2_3C<GxEPD2_750c_GDEY075Z08, GxEPD2_750c_GDEY075Z08::HEIGHT / 2> display(GxEPD2_750c_GDEY075Z08(/*CS=*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25)); // GDEY075Z08 800x480, UC8179, (FPC-C001 21.08.30)
 
-//GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)> display(GxEPD2_DRIVER_CLASS(/*CS=*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25));
 SPIClass hspi(HSPI);
 
 #include <TimeLib.h>
@@ -52,7 +51,9 @@ void setup() {
   hspi.begin(13, 12, 14, 15); // remap hspi for EPD (swap pins)
   display.epd2.selectSPI(hspi, SPISettings(4000000, MSBFIRST, SPI_MODE0));
   // *** end of special handling for Waveshare ESP32 Driver board *** //
-  display.init(115200);
+
+  // display.init(115200);
+  display.init(115200, true, 2, false); 
   display.setRotation(1);
 }
 
@@ -108,40 +109,53 @@ void fetchAndDisplayLocalTemp() {
   if (foundLocalTemp) {
     LocalTemp localTemp;
     fillLocalTempFromJson(&oregonData, &localTemp);
-    displayLocalTemp(&localTemp);
+    displayPartialLocalTemp(&localTemp);
   }
   #endif
 }
 
 
 void loop() {
+  display.setFullWindow();
+  display.firstPage();
+
   if (!connectToWifi()) {
-    displayError("Error: WIFI");
+    do {
+      display.fillScreen(GxEPD_WHITE);
+      displayError(20, "Error: WIFI");
+    } while (display.nextPage());
+
   } else {
     boolean weatherSuccess = fetchWeatherData();
     boolean eventsSuccess = fetchCalendarData();
     boolean linkySuccess = fetchLinkyData();
 
-    if (weatherSuccess) {
-      displayWeather(&weather);
-      displayUpdatedTime(&weather);
-    } else {
-      displayError("Error: weather");
-    }
+    do {
+      display.fillScreen(GxEPD_WHITE);
 
-    if (eventsSuccess) {
-      displayEvents(&events);
-    } else {
-      displayError("Error: calendar");
-    }
+      if (weatherSuccess) {
+        displayWeather(&weather);
+        displayUpdatedTime(&weather);
+      } else {
+        displayWeatherError("Error: weather");
+      }
 
-    if (linkySuccess) {
-      displayLinkyData(&daily, &power, &metadata);
-    } else {
-      displayError("Error: linky");
-    }
+      if (eventsSuccess) {
+        displayEvents(&events);
+      } else {
+        displayCalendarError("Error: calendar");
+      }
+
+      if (linkySuccess) {
+        displayLinkyData(&daily, &power, &metadata);
+      } else {
+        displayLinkyError("Error: linky");
+      }
+
+    } while (display.nextPage());
+
     fetchAndDisplayLocalTemp();
-  }  
+  }
   uint64_t sleepTime = weather.currentHour == 23 ? HOUR * 7 : HOUR;
   
   sleep(sleepTime);

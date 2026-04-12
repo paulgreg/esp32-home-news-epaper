@@ -48,22 +48,14 @@ void drawTextCenterAlign(int x, int y, char* text, int color, const GFXfont* fon
   display.println(text);
 }
 
-void displayError(char* text) {
-  int h = 20;
+void displayError(int y, char* text) {
   int x = 0;
-  int y = display.height() - h;
-  int w = display.width() / 2;
 
   display.setFont(&FONT_SMALL);
   display.setTextColor(GxEPD_RED);
   
-  display.setPartialWindow(x, y, w, h);
-  display.firstPage();
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    display.setCursor(x + 10, y + 10);
-    display.print(text);
-  } while (display.nextPage());
+  display.setCursor(x + 10, y + 10);
+  display.print(text);
 }
 
 void drawLine(uint y) {
@@ -146,29 +138,21 @@ void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* 
 #define WEATHER_HEIGHT 202
 
 void displayWeather(Weather* weather) {
-  if (weather->currentHour != 13) { // Partial refresh most of the time
-    display.setPartialWindow(WEATHER_X, 0, display.width(), WEATHER_HEIGHT);
-  }
-  display.firstPage();
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
-    displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
-    displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
-    drawLine(WEATHER_Y + WEATHER_HEIGHT - 2);
-  } while (display.nextPage());
+  displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
+  displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
+  displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
+  drawLine(WEATHER_Y + WEATHER_HEIGHT - 2);
+}
+
+void displayWeatherError(char* text) {
+  displayError(WEATHER_Y + 20, text);
 }
 
 void displayUpdatedTime(Weather* weather) {
-  display.setPartialWindow(0, display.height() - 20, display.width(), display.height());
-  display.firstPage();
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    drawTextRightAlign(display.width() - 10, display.height() - 10, weather->updated, GxEPD_BLACK, &FONT_SMALL);
-  } while (display.nextPage());  
+  drawTextRightAlign(display.width() - 10, display.height() - 10, weather->updated, GxEPD_BLACK, &FONT_SMALL);
 }
 
-void displayLocalTemp(LocalTemp* localTemp) {
+void displayPartialLocalTemp(LocalTemp* localTemp) {
   int x = WEATHER_X;
   int y = WEATHER_Y + 110;
   int w = 155;
@@ -205,23 +189,21 @@ void drawSummary(int x, int y, char* text, boolean isToday) {
 #define CALENDAR_HEIGHT 238
 
 void displayEvents(Events* events) {
-  display.setPartialWindow(0, CALENDAR_Y, display.width(), CALENDAR_HEIGHT);
-  display.firstPage();
   uint middleX = display.width() / 2;
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    int x = CALENDAR_X;
-    int y = CALENDAR_Y + 22;
-    for (int i = 0; i < events->size; i++) {
-      drawDateAndCalendar(middleX, y, events->date[i], events->calendar[i], events->isToday[i]);
-      y += 28;
-      drawSummary(middleX, y, events->summary[i], events->isToday[i]);
-      y += 30;
-    }
-    drawLine(CALENDAR_Y + CALENDAR_HEIGHT - 2);
-  } while (display.nextPage());
+  int x = CALENDAR_X;
+  int y = CALENDAR_Y + 22;
+  for (int i = 0; i < events->size; i++) {
+    drawDateAndCalendar(middleX, y, events->date[i], events->calendar[i], events->isToday[i]);
+    y += 28;
+    drawSummary(middleX, y, events->summary[i], events->isToday[i]);
+    y += 30;
+  }
+  drawLine(CALENDAR_Y + CALENDAR_HEIGHT - 2);
 }
 
+void displayCalendarError(char* text) {
+  displayError(CALENDAR_Y + 20, text);
+}
 
 /*
  * Linky
@@ -294,15 +276,14 @@ void displayMaxPower(uint offsetY, LinkyData* power) {
 }
 
 void displayLinkyData(LinkyData* daily, LinkyData* power, LinkyMetaData* metadata) {
-  display.setPartialWindow(0, LINKY_Y, display.width(), LINKY_HEIGHT);
-  display.firstPage();
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    displayScale(LINKY_Y);
-    displayDays(LINKY_Y, daily);
-    displayPrices(LINKY_Y, daily, metadata->price);
-    displayConsumption(LINKY_Y, daily);
-    displayMaxPower(LINKY_Y, power);
-    drawLine(LINKY_Y + LINKY_HEIGHT - 2);
-  } while (display.nextPage());
+  displayScale(LINKY_Y);
+  displayDays(LINKY_Y, daily);
+  displayPrices(LINKY_Y, daily, metadata->price);
+  displayConsumption(LINKY_Y, daily);
+  displayMaxPower(LINKY_Y, power);
+  drawLine(LINKY_Y + LINKY_HEIGHT - 2);
+}
+
+void displayLinkyError(char* text) {
+  displayError(LINKY_Y + 20, text);
 }

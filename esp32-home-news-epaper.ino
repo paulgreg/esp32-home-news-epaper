@@ -4,12 +4,14 @@
 #define USE_HSPI_FOR_EPD
 
 #define GxEPD2_DISPLAY_CLASS GxEPD2_3C
-#define GxEPD2_DRIVER_CLASS GxEPD2_583c_Z83 // GDEW0583Z83 648x480, EK79655 (GD7965)
+#define GxEPD2_DRIVER_CLASS GxEPD2_750c_Z08 
 
 #define MAX_DISPLAY_BUFFER_SIZE 65536ul
 #define MAX_HEIGHT(EPD) (EPD::HEIGHT <= (MAX_DISPLAY_BUFFER_SIZE / 2) / (EPD::WIDTH / 8) ? EPD::HEIGHT : (MAX_DISPLAY_BUFFER_SIZE / 2) / (EPD::WIDTH / 8))
 
-GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)> display(GxEPD2_DRIVER_CLASS(/*CS=*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25));
+GxEPD2_3C<GxEPD2_750c_GDEY075Z08, GxEPD2_750c_GDEY075Z08::HEIGHT / 2> display(GxEPD2_750c_GDEY075Z08(/*CS=*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25)); // GDEY075Z08 800x480, UC8179, (FPC-C001 21.08.30)
+
+//GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)> display(GxEPD2_DRIVER_CLASS(/*CS=*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25));
 SPIClass hspi(HSPI);
 
 #include <TimeLib.h>
@@ -139,9 +141,9 @@ void loop() {
       displayError("Error: linky");
     }
     fetchAndDisplayLocalTemp();
-  }
+  }  
   uint64_t sleepTime = weather.currentHour == 23 ? HOUR * 7 : HOUR;
-
+  
   sleep(sleepTime);
   Serial.println("SLEEP FAILED");
   delay(HOUR);
@@ -154,9 +156,12 @@ void sleep(uint64_t sleepTime) {
   Serial.println(sleepTime);
   delay(SECOND);
   Serial.flush();
+  // display.hibernate();
   display.powerOff();
+
   esp_sleep_enable_timer_wakeup((uint64_t) sleepTime * MICRO_SEC_TO_MILLI_SEC_FACTOR);
   esp_deep_sleep_start();
+
   delay(MINUTE);
 }
 

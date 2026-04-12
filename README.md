@@ -20,7 +20,7 @@ You’ll need to copy `parameters.h.dist` to `parameters.h` and change it to you
 ## Hardware
 
   * [WaveShare ESP32 Driver Board](https://www.waveshare.com/product/e-paper-esp32-driver-board.htm)
-  * [5.83" b/w/r e-ink screen](https://www.waveshare.com/5.83inch-e-paper-b.htm) GDEW0583Z83 648x480, EK79655 (GD7965)
+  * [7.5" b/w/r e-ink screen - GxEPD2_750c_GDEY075Z08
   * 433 Mhz Superheterodyne RF Receiver Module
 
 

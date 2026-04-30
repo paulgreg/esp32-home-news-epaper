@@ -19,10 +19,12 @@ SPIClass hspi(HSPI);
 #include <Arduino_JSON.h>
 
 #include "parameters.h"
+#include "stringUtil.h"
 #include "events.h"
 #include "temp.h"
 #include "weather.h"
 #include "linky.h"
+#include "words.h"
 #include "display.h"
 #include "network.h"
 
@@ -36,6 +38,7 @@ Events events;
 LinkyData daily;
 LinkyData power;
 LinkyMetaData metadata;
+Words words;
 
 void setup() {
   Serial.begin(115200);
@@ -87,6 +90,16 @@ boolean fetchLinkyData() {
   return success;
 }
 
+boolean fetchWordsData() {
+  uint retries = MAX_RETRIES;
+  boolean success = false;
+  while(!success && (retries-- > 0)) {
+    delay(RETRIES_DELAY);
+    success = getWordsJSON(&words);
+  }
+  return success;
+}
+
 void fetchAndDisplayLocalTemp() {
   #ifdef RF_RX_PIN
   // get local temperature from oregon sensor
@@ -129,6 +142,7 @@ void loop() {
     boolean weatherSuccess = fetchWeatherData();
     boolean eventsSuccess = fetchCalendarData();
     boolean linkySuccess = fetchLinkyData();
+    boolean wordsSuccess = fetchWordsData();
 
     do {
       display.fillScreen(GxEPD_WHITE);
@@ -144,6 +158,12 @@ void loop() {
         displayEvents(&events);
       } else {
         displayCalendarError("Error: calendar");
+      }
+
+      if (wordsSuccess) {
+        displayWords(&words);
+      } else {
+        displayWordsError("Error: word of the day");
       }
 
       if (linkySuccess) {

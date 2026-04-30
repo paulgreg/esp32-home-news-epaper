@@ -23,6 +23,8 @@
 
 #define EURO "\x80"
 
+#define V_MARGIN 2
+
 void drawText(int x, int y, char* text, int color, const GFXfont* font) {
   display.setFont(font);
   display.setTextColor(color);
@@ -33,7 +35,8 @@ void drawText(int x, int y, char* text, int color, const GFXfont* font) {
 void drawTextRightAlign(int x, int y, char* text, int color, const GFXfont* font) {
   display.setFont(font);
   display.setTextColor(color);
-  int16_t tbx, tby; uint16_t tbw, tbh;
+  int16_t tbx, tby;
+  uint16_t tbw, tbh;
   display.getTextBounds(text, 0, 0, &tbx, &tby, &tbw, &tbh);
   display.setCursor(x - tbw, y);
   display.println(text);
@@ -42,7 +45,8 @@ void drawTextRightAlign(int x, int y, char* text, int color, const GFXfont* font
 void drawTextCenterAlign(int x, int y, char* text, int color, const GFXfont* font) {
   display.setFont(font);
   display.setTextColor(color);
-  int16_t tbx, tby; uint16_t tbw, tbh;
+  int16_t tbx, tby;
+  uint16_t tbw, tbh;
   display.getTextBounds(text, 0, 0, &tbx, &tby, &tbw, &tbh);
   display.setCursor(x - (tbw / 2), y);
   display.println(text);
@@ -53,7 +57,7 @@ void displayError(int y, char* text) {
 
   display.setFont(&FONT_SMALL);
   display.setTextColor(GxEPD_RED);
-  
+
   display.setCursor(x + 10, y + 10);
   display.print(text);
 }
@@ -118,7 +122,7 @@ void drawIcon(int x, int y, char* icon) {
   } else if (strcmp(icon, "13d") == 0 || strcmp(icon, "13n") == 0) {
     // 13d - Snow
     display.drawBitmap(x, y, icon_13d_snow_bits, icon_13d_snow_width, icon_13d_snow_height, GxEPD_BLACK);
-  } else if (strcmp(icon, "50d") == 0 ||strcmp(icon, "50n") == 0) {
+  } else if (strcmp(icon, "50d") == 0 || strcmp(icon, "50n") == 0) {
     // 50d - Fog
     display.drawBitmap(x, y, icon_50d_fog_bits, icon_50d_fog_width, icon_50d_fog_height, GxEPD_BLACK);
   }
@@ -126,14 +130,13 @@ void drawIcon(int x, int y, char* icon) {
 
 void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* temp2, char* humidity) {
   int center = 60;
-  drawTextCenterAlign(center + x,  28 + y, title, GxEPD_BLACK, &FONT_BIG);
-  drawIcon(               20 + x,  30 + y, icon);
-  drawTextRightAlign(    130 + x, 130 + y, temp1, GxEPD_BLACK, &FONT_BIG);
-  drawTextRightAlign(    130 + x, 160 + y, temp2, GxEPD_BLACK, &FONT_BIG);
-  drawTextCenterAlign(center + x, 190 + y, humidity, GxEPD_BLACK, &FONT_NORMAL);
+  drawTextCenterAlign(center + x, 28 + y, title, GxEPD_BLACK, &FONT_BIG);
+  drawIcon(20 + x, 30 + y, icon);
+  drawTextRightAlign(130 + x, 130 + y, temp1, GxEPD_BLACK, &FONT_BIG);
+  drawTextRightAlign(130 + x, 160 + y, temp2, GxEPD_BLACK, &FONT_BIG);
 }
 
-#define WEATHER_X  0
+#define WEATHER_X 0
 #define WEATHER_Y 0
 #define WEATHER_HEIGHT 202
 
@@ -149,7 +152,7 @@ void displayWeatherError(char* text) {
 }
 
 void displayUpdatedTime(Weather* weather) {
-  drawTextRightAlign(display.width() - 10, display.height() - 10, weather->updated, GxEPD_BLACK, &FONT_SMALL);
+  drawTextRightAlign(display.width() - 4, display.height() - 4, weather->updated, GxEPD_BLACK, &FONT_SMALL);
 }
 
 void displayPartialLocalTemp(LocalTemp* localTemp) {
@@ -157,7 +160,7 @@ void displayPartialLocalTemp(LocalTemp* localTemp) {
   int y = WEATHER_Y + 110;
   int w = 155;
   int h = 56;
-  
+
   display.setPartialWindow(x, y, w, h);
   display.firstPage();
   do {
@@ -184,9 +187,9 @@ void drawSummary(int x, int y, char* text, boolean isToday) {
   drawTextCenterAlign(x, y, summary, isToday ? GxEPD_BLACK : GxEPD_RED, &FONT_BIG);
 }
 
-#define CALENDAR_X  10
-#define CALENDAR_Y WEATHER_Y + WEATHER_HEIGHT + 2
-#define CALENDAR_HEIGHT 238
+#define CALENDAR_X 10
+#define CALENDAR_Y WEATHER_Y + WEATHER_HEIGHT + V_MARGIN
+#define CALENDAR_HEIGHT 248
 
 void displayEvents(Events* events) {
   uint middleX = display.width() / 2;
@@ -205,11 +208,42 @@ void displayCalendarError(char* text) {
   displayError(CALENDAR_Y + 20, text);
 }
 
+
+/*
+ * Word of the day
+ */
+#define WORDS_Y CALENDAR_Y + CALENDAR_HEIGHT + 10
+#define WORDS_HEIGHT 140
+
+void displayWords(Words* words) {
+  int xLang = 34;
+  int xWord = 40;
+  int yGap = 22;
+
+  int xSecondColumn = display.width() / 2 - 10;
+
+  for (int i = 0; i < NB_LANG; i+=2) {
+    int y = WORDS_Y + (1 + i) * yGap;
+
+    drawTextRightAlign(xLang, y, words->languages[i], GxEPD_BLACK, &FONT_NORMAL);
+    drawText(xWord, y, words->translations[i], GxEPD_BLACK, &FONT_BIG);
+
+    drawTextRightAlign(xSecondColumn + xLang, y, words->languages[i+1], GxEPD_BLACK, &FONT_NORMAL);
+    drawText(xSecondColumn + xWord, y, words->translations[i+1], GxEPD_BLACK, &FONT_BIG);
+
+    display.drawLine(0, y + 5, display.width(), y + 5, GxEPD_RED);
+  }
+}
+
+void displayWordsError(char* text) {
+  displayError(WORDS_Y + 20, text);
+}
+
 /*
  * Linky
  */
-#define LINKY_X  10
-#define LINKY_Y CALENDAR_Y + CALENDAR_HEIGHT + 4
+#define LINKY_X 10
+#define LINKY_Y WORDS_Y + WORDS_HEIGHT + V_MARGIN
 #define LINKY_HEIGHT 172
 
 #define LINKY_STEP 46
@@ -232,24 +266,24 @@ void displayPrices(int offsetY, LinkyData* daily, double kmWPerHourPrice) {
 void displayDays(uint offsetY, LinkyData* daily) {
   char date[3];
   for (int i = 0; i < LINKY_DAYS; i++) {
-    if (strlen(daily->days[i]) >= 9) { // str is like yyyy-mm-dd
+    if (strlen(daily->days[i]) >= 9) {  // str is like yyyy-mm-dd
       drawText(LINKY_OFFSET_X + i * LINKY_STEP, offsetY + 160, &daily->days[i][8], GxEPD_BLACK, &FONT_SMALL);
     }
   }
 }
 
-int mapToY (int y) {
- int yy = y * 7;
- int maxY = LINKY_MAX_Y;
- int r = yy < maxY ? maxY - yy : maxY;
- // Serial.printf("mapToY: %i ⁻> %i\n", y, r);
- return r;
+int mapToY(int y) {
+  int yy = y * 7;
+  int maxY = LINKY_MAX_Y;
+  int r = yy < maxY ? maxY - yy : maxY;
+  // Serial.printf("mapToY: %i ⁻> %i\n", y, r);
+  return r;
 }
 
 void displayScale(uint offsetY) {
   char s[4];
   Serial.println("Scale");
-  for (int i = 0; i <= 15; i+=3) {
+  for (int i = 0; i <= 15; i += 3) {
     int y = offsetY + mapToY(i);
     sprintf(s, "%2dk", i);
     drawText(16, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
@@ -281,7 +315,7 @@ void displayLinkyData(LinkyData* daily, LinkyData* power, LinkyMetaData* metadat
   displayPrices(LINKY_Y, daily, metadata->price);
   displayConsumption(LINKY_Y, daily);
   displayMaxPower(LINKY_Y, power);
-  drawLine(LINKY_Y + LINKY_HEIGHT - 2);
+  // drawLine(LINKY_Y + LINKY_HEIGHT - 2);
 }
 
 void displayLinkyError(char* text) {

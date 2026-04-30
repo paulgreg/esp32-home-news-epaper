@@ -22,3 +22,5 @@
 #define LINKY_DAYS 9
 #define LINKY_PRICE_THRESHOLD 1.5
 
+#define WORDS_URL "url-to/word-of-the-day.json"
+

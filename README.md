@@ -7,6 +7,7 @@ That project combines previous projects into a single e-ink screen :
   * [IoT eink Weather Station](https://hackaday.io/project/171910-iot-eink-weather-station)
   * [esp32next-calendar-events](https://github.com/paulgreg/esp32-next-calendar-events)
   * [Linky Daily Consumption](https://hackaday.io/project/177065-linky-daily-consumption)
+  * [Multilingual Word of the day](https://hackaday.io/project/202066-multilingual-word-of-the-day)
 
 
 Weather is fetched from [Open Weather Map](https://openweathermap.org/). You’ll need to create an account to get an API key.

@@ -102,3 +102,16 @@ boolean getLinkyJSON(LinkyData* daily, LinkyData* power, LinkyMetaData* meta) {
 
   return dailySuccess && powerSuccess && metaSuccess;
 }
+
+boolean getWordsJSON(Words* words) {
+  boolean wordsSuccess = false;
+
+  String wordStr = httpGet(WORDS_URL, "", "");
+  JSONVar json = JSON.parse(wordStr);
+  if (JSON.typeof(json) == "undefined") {
+    Serial.println("Parsing words of the day input failed!");
+  } else {    
+    wordsSuccess = fillWordsFromJson(json, words);
+  }
+  return wordsSuccess;
+}

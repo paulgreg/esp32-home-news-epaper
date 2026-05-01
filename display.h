@@ -23,7 +23,7 @@
 
 #define EURO "\x80"
 
-#define V_MARGIN 2
+#define V_MARGIN 4
 
 void drawText(int x, int y, char* text, int color, const GFXfont* font) {
   display.setFont(font);
@@ -62,8 +62,8 @@ void displayError(int y, char* text) {
   display.print(text);
 }
 
-void drawLine(uint y) {
-  display.fillRect(0, y - 1, display.width(), 1, GxEPD_BLACK);
+void drawLine(uint y, uint size, int color) {
+  display.fillRect(0, y - 1, display.width(), size, color);
 }
 
 /*
@@ -138,13 +138,13 @@ void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* 
 
 #define WEATHER_X 0
 #define WEATHER_Y 0
-#define WEATHER_HEIGHT 202
+#define WEATHER_HEIGHT 182
 
 void displayWeather(Weather* weather) {
   displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
   displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
   displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
-  drawLine(WEATHER_Y + WEATHER_HEIGHT - 2);
+  drawLine(WEATHER_Y + WEATHER_HEIGHT - V_MARGIN, 2, GxEPD_BLACK);
 }
 
 void displayWeatherError(char* text) {
@@ -189,7 +189,7 @@ void drawSummary(int x, int y, char* text, boolean isToday) {
 
 #define CALENDAR_X 10
 #define CALENDAR_Y WEATHER_Y + WEATHER_HEIGHT + V_MARGIN
-#define CALENDAR_HEIGHT 248
+#define CALENDAR_HEIGHT 270
 
 void displayEvents(Events* events) {
   uint middleX = display.width() / 2;
@@ -201,7 +201,7 @@ void displayEvents(Events* events) {
     drawSummary(middleX, y, events->summary[i], events->isToday[i]);
     y += 30;
   }
-  drawLine(CALENDAR_Y + CALENDAR_HEIGHT - 2);
+  drawLine(CALENDAR_Y + CALENDAR_HEIGHT - V_MARGIN, 2, GxEPD_BLACK);
 }
 
 void displayCalendarError(char* text) {
@@ -212,8 +212,8 @@ void displayCalendarError(char* text) {
 /*
  * Word of the day
  */
-#define WORDS_Y CALENDAR_Y + CALENDAR_HEIGHT + 10
-#define WORDS_HEIGHT 140
+#define WORDS_Y CALENDAR_Y + CALENDAR_HEIGHT + V_MARGIN + 4
+#define WORDS_HEIGHT 136
 
 void displayWords(Words* words) {
   int xLang = 34;
@@ -231,8 +231,9 @@ void displayWords(Words* words) {
     drawTextRightAlign(xSecondColumn + xLang, y, words->languages[i+1], GxEPD_BLACK, &FONT_NORMAL);
     drawText(xSecondColumn + xWord, y, words->translations[i+1], GxEPD_BLACK, &FONT_BIG);
 
-    display.drawLine(0, y + 5, display.width(), y + 5, GxEPD_RED);
+    drawLine(y + 5, 1, GxEPD_RED);
   }
+  drawLine(WORDS_Y + WORDS_HEIGHT - V_MARGIN, 2, GxEPD_BLACK);
 }
 
 void displayWordsError(char* text) {
@@ -240,43 +241,61 @@ void displayWordsError(char* text) {
 }
 
 /*
- * Linky
+ * Linky & Bandwidth
  */
-#define LINKY_X 10
-#define LINKY_Y WORDS_Y + WORDS_HEIGHT + V_MARGIN
+#define LINKY_X 4
+#define GRAPH_Y WORDS_Y + WORDS_HEIGHT + V_MARGIN
 #define LINKY_HEIGHT 172
 
-#define LINKY_STEP 46
-#define LINKY_OFFSET_X 65
-#define LINKY_MAX_Y 140
+#define GRAPH_STEP 45
+#define GRAPH_OFFSET_X 53
+#define GRAPH_MAX_Y 140
 
 void displayPrices(int offsetY, LinkyData* daily, double kmWPerHourPrice) {
   int y = offsetY + 16;
-  drawText(18, offsetY + 18, EURO, GxEPD_BLACK, &FONT_NORMAL);
+  drawText(LINKY_X, offsetY + 18, EURO, GxEPD_BLACK, &FONT_NORMAL);
   char price[10];
-  for (int i = 0; i < LINKY_DAYS; i++) {
-    double p = daily->values[i] * kmWPerHourPrice / 1000;
-    sprintf(price, "%.1lf", p);
-    Serial.printf("price: %s\n", price);
-    int x = LINKY_OFFSET_X + i * LINKY_STEP;
-    drawText(x, y, price, p >= LINKY_PRICE_THRESHOLD ? GxEPD_BLACK : GxEPD_RED, &FONT_SMALL);
-  }
-}
+  for (int i = 0; i < CHART_DAYS; i++) {
+    int x = GRAPH_OFFSET_X + i * GRAPH_STEP;
 
-void displayDays(uint offsetY, LinkyData* daily) {
-  char date[3];
-  for (int i = 0; i < LINKY_DAYS; i++) {
-    if (strlen(daily->days[i]) >= 9) {  // str is like yyyy-mm-dd
-      drawText(LINKY_OFFSET_X + i * LINKY_STEP, offsetY + 160, &daily->days[i][8], GxEPD_BLACK, &FONT_SMALL);
+    if (daily->values[i] == 0) {
+      drawText(x, y, "n/a", GxEPD_RED, &FONT_SMALL);
+    } else {
+      double p = daily->values[i] * kmWPerHourPrice / 1000;
+      sprintf(price, "%.1lf", p);
+      Serial.printf("price: %s\n", price);
+      drawText(x, y, price, p >= LINKY_PRICE_THRESHOLD ? GxEPD_BLACK : GxEPD_RED, &FONT_SMALL);
     }
   }
 }
 
-int mapToY(int y) {
+void displayDays(uint offsetY, BandwidthData* daily) {
+  char date[3];
+  for (int i = 0; i < CHART_DAYS; i++) {
+    if (strlen(daily->days[i]) >= 9) {  // str is like yyyy-mm-dd
+      drawText(GRAPH_OFFSET_X + i * GRAPH_STEP, offsetY + 160, &daily->days[i][8], GxEPD_BLACK, &FONT_SMALL);
+    }
+  }
+}
+
+int mapToYElectricity(int y) {
   int yy = y * 7;
-  int maxY = LINKY_MAX_Y;
+  int maxY = GRAPH_MAX_Y;
   int r = yy < maxY ? maxY - yy : maxY;
   // Serial.printf("mapToY: %i ⁻> %i\n", y, r);
+  return r;
+}
+
+int mapToYBandwidth(int mbValue) {
+  // Convert Mb to Gb, then map to display coordinates
+  // Bandwidth scale: 0-50 Gb should map to same vertical space as 0-15 kW
+  // Since 50 Gb should map to same height as 15 kW:
+  float gbValue = mbValue / 1000.0;  // Convert Mb to Gb
+  float normalized = gbValue / 50.0 * 15.0;  // Scale 0-50 Gb to 0-15 range
+  int yy = normalized * 7;
+  int maxY = GRAPH_MAX_Y;
+  int r = yy < maxY ? maxY - yy : maxY;
+  // Serial.printf("mapToYBandwidth: %d Mb (%.1f Gb) -> %d\n", mbValue, gbValue, r);
   return r;
 }
 
@@ -284,40 +303,74 @@ void displayScale(uint offsetY) {
   char s[4];
   Serial.println("Scale");
   for (int i = 0; i <= 15; i += 3) {
-    int y = offsetY + mapToY(i);
+    int y = offsetY + mapToYElectricity(i);
     sprintf(s, "%2dk", i);
-    drawText(16, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
-    display.fillRect(50, y, 420, 2, GxEPD_RED);
+    drawText(LINKY_X, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
+    display.fillRect(38, y, 410, 2, GxEPD_RED);
+  }
+}
+
+void displayBandwidthScale(uint offsetY) {
+  char s[5];
+  Serial.println("Bandwidth Scale");
+  // Draw scale on right side with 10 Gb increments (0, 10, 20, 30, 40, 50)
+  for (int i = 0; i <= 50; i += 10) {
+    int y = offsetY + mapToYBandwidth(i * 1000); // Convert Gb back to Mb for mapping
+    sprintf(s, "%2d", i);
+    drawTextRightAlign(display.width() - 4, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
   }
 }
 
 void displayConsumption(uint offsetY, LinkyData* daily) {
-  for (int i = 0; i < LINKY_DAYS; i++) {
+  for (int i = 0; i < CHART_DAYS; i++) {
+    if (daily->values[i] == 0) break;
     int value = daily->values[i] / 1000;
-    int x = LINKY_OFFSET_X + 10 + i * LINKY_STEP;
-    int y = offsetY + mapToY(value);
-    display.fillRect(x, y, 12, (offsetY + LINKY_MAX_Y) - y, GxEPD_BLACK);
+    int x = GRAPH_OFFSET_X + 14 + i * GRAPH_STEP;
+    int y = offsetY + mapToYElectricity(value);
+    display.fillRect(x, y, 12, (offsetY + GRAPH_MAX_Y) - y, GxEPD_BLACK);
   }
 }
 
 void displayMaxPower(uint offsetY, LinkyData* power) {
-  for (int i = 0; i < LINKY_DAYS; i++) {
+  for (int i = 0; i < CHART_DAYS; i++) {
     int value = power->values[i] / 1000;
-    int x = LINKY_OFFSET_X + i * LINKY_STEP;
-    int y = offsetY + mapToY(value);
-    display.fillRect(x, y, 6, (offsetY + LINKY_MAX_Y) - y, GxEPD_RED);
+    int x = GRAPH_OFFSET_X + 4 + i * GRAPH_STEP;
+    int y = offsetY + mapToYElectricity(value);
+    display.fillRect(x, y, 6, (offsetY + GRAPH_MAX_Y) - y, GxEPD_RED);
   }
 }
 
 void displayLinkyData(LinkyData* daily, LinkyData* power, LinkyMetaData* metadata) {
-  displayScale(LINKY_Y);
-  displayDays(LINKY_Y, daily);
-  displayPrices(LINKY_Y, daily, metadata->price);
-  displayConsumption(LINKY_Y, daily);
-  displayMaxPower(LINKY_Y, power);
-  // drawLine(LINKY_Y + LINKY_HEIGHT - 2);
+  displayScale(GRAPH_Y);
+  displayPrices(GRAPH_Y, daily, metadata->price);
+  displayConsumption(GRAPH_Y, daily);
+  displayMaxPower(GRAPH_Y, power);
+  drawLine(GRAPH_Y + LINKY_HEIGHT - V_MARGIN, 2, GxEPD_BLACK);
 }
 
-void displayLinkyError(char* text) {
-  displayError(LINKY_Y + 20, text);
+void drawDiamond(int centerX, int centerY, int size, int color) {
+  // Top triangle
+  display.fillTriangle(centerX, centerY - size, centerX + size, centerY, centerX - size, centerY, color);
+  // Bottom triangle
+  display.fillTriangle(centerX, centerY + size, centerX + size, centerY, centerX - size, centerY, color);
+}
+
+void displayBandwidth(uint offsetY, BandwidthData* daily) {
+  for (int i = 0; i < CHART_DAYS; i++) {
+    int value = daily->values[i];
+    int x = GRAPH_OFFSET_X + i * GRAPH_STEP;
+    int y = offsetY + mapToYBandwidth(value);
+    drawDiamond(x - 6, y, 6, GxEPD_BLACK);
+  }
+}
+
+void displayBandwidthData(BandwidthData* daily) {
+  displayDays(GRAPH_Y, daily);
+  displayBandwidthScale(GRAPH_Y);
+  drawTextRightAlign(display.width() - 2, GRAPH_Y + 18, "Go", GxEPD_BLACK, &FONT_NORMAL);
+  displayBandwidth(GRAPH_Y, daily);
+}
+
+void displayGraphError(char* text) {
+  displayError(GRAPH_Y + 20, text);
 }

@@ -13,18 +13,19 @@ GxEPD2_3C<GxEPD2_750c_GDEY075Z08, GxEPD2_750c_GDEY075Z08::HEIGHT / 2> display(Gx
 
 SPIClass hspi(HSPI);
 
-#include <TimeLib.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Arduino_JSON.h>
 
 #include "parameters.h"
+#include <TimeLib.h>
 #include "stringUtil.h"
 #include "events.h"
 #include "temp.h"
 #include "weather.h"
-#include "linky.h"
 #include "words.h"
+#include "bandwidth.h"
+#include "linky.h"
 #include "display.h"
 #include "network.h"
 
@@ -38,6 +39,7 @@ Events events;
 LinkyData daily;
 LinkyData power;
 LinkyMetaData metadata;
+BandwidthData bandwidthData;
 Words words;
 
 void setup() {
@@ -80,12 +82,22 @@ boolean fetchCalendarData() {
   return success;
 }
 
+boolean fetchBandwidthData() {
+  uint retries = MAX_RETRIES;
+  boolean success = false;
+  while(!success && (retries-- > 0)) {
+    delay(RETRIES_DELAY);
+    success = getBandwidthJSON(&bandwidthData);
+  }
+  return success;
+}
+
 boolean fetchLinkyData() {
   uint retries = MAX_RETRIES;
   boolean success = false;
   while(!success && (retries-- > 0)) {
     delay(RETRIES_DELAY);
-    success = getLinkyJSON(&daily, &power, &metadata);
+    success = getLinkyJSON(&daily, &power, &metadata, &bandwidthData);
   }
   return success;
 }
@@ -141,6 +153,7 @@ void loop() {
   } else {
     boolean weatherSuccess = fetchWeatherData();
     boolean eventsSuccess = fetchCalendarData();
+    boolean bandwidthSuccess = fetchBandwidthData();
     boolean linkySuccess = fetchLinkyData();
     boolean wordsSuccess = fetchWordsData();
 
@@ -160,16 +173,22 @@ void loop() {
         displayCalendarError("Error: calendar");
       }
 
+      if (linkySuccess) {
+        displayLinkyData(&daily, &power, &metadata);
+      } else {
+        displayGraphError("Error: linky");
+      }
+
+      if (bandwidthSuccess) {
+        displayBandwidthData(&bandwidthData);
+      } else {
+        displayGraphError("Error: bandwidth");
+      }
+
       if (wordsSuccess) {
         displayWords(&words);
       } else {
         displayWordsError("Error: word of the day");
-      }
-
-      if (linkySuccess) {
-        displayLinkyData(&daily, &power, &metadata);
-      } else {
-        displayLinkyError("Error: linky");
       }
 
     } while (display.nextPage());

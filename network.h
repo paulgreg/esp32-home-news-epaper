@@ -70,37 +70,49 @@ boolean getCalendarJSON(Events* events) {
   return success;
 }
 
-boolean getLinkyJSON(LinkyData* daily, LinkyData* power, LinkyMetaData* meta) {
+boolean getLinkyJSON(LinkyData* daily, LinkyData* power, LinkyMetaData* meta, BandwidthData* bandwidthRef = nullptr) {
   boolean dailySuccess = false;
   boolean powerSuccess = false;
   boolean metaSuccess = false;
 
-
   String dailyStr = httpGet(LINKY_DAILY_CONSUMPTION_URL, LINK_LOGIN, LINKY_PASSWORD);
   JSONVar json1 = JSON.parse(dailyStr);
   if (JSON.typeof(json1) == "undefined") {
-    Serial.println("Parsing dailyJson input failed!");
-  } else {    
-    dailySuccess = fillLinkyDataFromJson(json1, daily);
+    Serial.println("Parsing linky dailyJson input failed!");
+  } else    {
+    dailySuccess = fillLinkyDataFromJson(json1, daily, bandwidthRef);
   }
 
   String powerStr = httpGet(LINKY_MAX_POWER_URL, LINK_LOGIN, LINKY_PASSWORD);
   JSONVar json2 = JSON.parse(powerStr);
   if (JSON.typeof(json2) == "undefined") {
-    Serial.println("Parsing powerJson input failed!");
+    Serial.println("Parsing linky powerJson input failed!");
   } else {
-    powerSuccess = fillLinkyDataFromJson(json2, power);
+    powerSuccess = fillLinkyDataFromJson(json2, power, bandwidthRef);
   }
 
   String metaStr = httpGet(LINKY_PRICE_URL, LINK_LOGIN, LINKY_PASSWORD);
   JSONVar json3 = JSON.parse(metaStr);
   if (JSON.typeof(json3) == "undefined") {
-    Serial.println("Parsing priceJson input failed!");
+    Serial.println("Parsing linky priceJson input failed!");
   } else {
     metaSuccess = fillLinkyMetaDataFromJson(json3, meta);
   }
 
   return dailySuccess && powerSuccess && metaSuccess;
+}
+
+boolean getBandwidthJSON(BandwidthData* daily) {
+  boolean dailySuccess = false;
+
+  String dailyStr = httpGet(BANDWIDTH_URL, "", "");
+  JSONVar json = JSON.parse(dailyStr);
+  if (JSON.typeof(json) == "undefined") {
+    Serial.println("Parsing bandwidth dailyJson input failed!");
+  } else {    
+    dailySuccess = fillBandwidthDataFromJson(json, daily);
+  }
+  return dailySuccess;
 }
 
 boolean getWordsJSON(Words* words) {

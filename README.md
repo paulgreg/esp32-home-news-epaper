@@ -1,22 +1,24 @@
 # ESP32 home news epaper
 
-A display showing weather (current, today and tomorrow), agenda & power comsumption (for french Linky service) on an e-ink screen, powered by an esp32.
+A display showing weather (current, today and tomorrow), agenda, power comsumption (for french Linky) and router’s bandwidth on an e-ink screen, powered by an esp32.
 
-That project combines previous projects into a single e-ink screen :
+That project combines previous projects output into a single e-ink screen :
 
   * [IoT eink Weather Station](https://hackaday.io/project/171910-iot-eink-weather-station)
   * [esp32next-calendar-events](https://github.com/paulgreg/esp32-next-calendar-events)
   * [Linky Daily Consumption](https://hackaday.io/project/177065-linky-daily-consumption)
   * [Multilingual Word of the day](https://hackaday.io/project/202066-multilingual-word-of-the-day)
 
-
 Weather is fetched from [Open Weather Map](https://openweathermap.org/). You’ll need to create an account to get an API key.
 
-The « agenda » and power consumption needs JSON produced and served on a server :
+The « agenda », power consumption, words of the day and bandwidth usage needs JSON produced and served on a server :
 - [next-calendar-events-server](https://github.com/paulgreg/next-calendar-events-server) to fetch and format agenda events,
 - [bokub/linky](https://github.com/bokub/linky), launched daily to produces daily consumption and max power files. You will also need a price.json file containing `{ "price": "0.23" }`
+- [word-of-the-day-server](https://github.com/paulgreg/word-of-the-day-server),
+- [snmp-router](https://github.com/paulgreg/snmp-router).
 
 You’ll need to copy `parameters.h.dist` to `parameters.h` and change it to your needs.
+
 
 ## Hardware
 

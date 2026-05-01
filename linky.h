@@ -26,6 +26,17 @@ struct LinkyMetaData {
     },...
 */
 
+// Helper function to extract date part from timestamp (handles both "YYYY-MM-DD" and "YYYY-MM-DD HH:MM:SS")
+void extractDatePart(char* dest, const char* source, size_t destSize) {
+  // Copy up to 10 characters (YYYY-MM-DD) or until space/end
+  size_t i = 0;
+  while (i < destSize - 1 && source[i] != '\0' && source[i] != ' ' && i < 10) {
+    dest[i] = source[i];
+    i++;
+  }
+  dest[i] = '\0'; // Null-terminate
+}
+
 boolean fillLinkyDataFromJson(JSONVar json, LinkyData* data, BandwidthData* bandwidthRef = nullptr) {
   if (!json.hasOwnProperty("reading_type")) {
     Serial.println("fillLinkyDataFromJson: reading_type key not found");
@@ -53,7 +64,12 @@ boolean fillLinkyDataFromJson(JSONVar json, LinkyData* data, BandwidthData* band
        
        for (int j = 0; j < size; j++) {
          const char* linkyDate = (const char*) json["interval_reading"][j]["date"];
-         if (strcmp(linkyDate, bandwidthRef->days[i]) == 0) {
+         
+         // Extract date part from Linky timestamp for comparison
+         char linkyDatePart[11]; // YYYY-MM-DD + null terminator
+         extractDatePart(linkyDatePart, linkyDate, sizeof(linkyDatePart));
+         
+         if (strcmp(linkyDatePart, bandwidthRef->days[i]) == 0) {
            data->values[i] = atoi((const char*) json["interval_reading"][j]["value"]);
            break;
          }

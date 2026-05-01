@@ -1,4 +1,3 @@
-
 #include <GxEPD2_3C.h>
 
 #define USE_HSPI_FOR_EPD
@@ -34,6 +33,8 @@ const uint64_t MINUTE = 60 * SECOND;
 const uint64_t HOUR = 60 * MINUTE;
 const uint64_t MICRO_SEC_TO_MILLI_SEC_FACTOR = 1000;
 
+enum state { RENDER_1 = 1, RENDER_2 = 2, RENDER_END = 3 };
+
 Weather weather;
 Events events;
 LinkyData daily;
@@ -41,6 +42,8 @@ LinkyData power;
 LinkyMetaData metadata;
 BandwidthData bandwidthData;
 Words words;
+LocalTemp localTemp;
+
 
 void setup() {
   Serial.begin(115200);
@@ -112,35 +115,40 @@ boolean fetchWordsData() {
   return success;
 }
 
-void fetchAndDisplayLocalTemp() {
+boolean fetchLocalTemp() {
+  boolean foundLocalTemp = false;
+
   #ifdef RF_RX_PIN
   // get local temperature from oregon sensor
-  uint64_t retries = 500000000;
-  boolean foundLocalTemp = false;
+  const uint32_t maxRetries = 180 * 100; // 180 seconds with 10ms delay
+  const uint32_t retryDelayMs = 10;
   OregonTHN128Data_t oregonData;
 
   Serial.println("Try to fetch local temp");
-  while(!foundLocalTemp && (retries-- > 0)) {
-    if (OregonTHN128_Available()) {    
-      Serial.print("found, nb of tries: "); Serial.println(retries);
+  for (uint32_t retries = maxRetries; retries > 0 && !foundLocalTemp; retries--) {
+    if (OregonTHN128_Available()) {
+      if (retries % 100 == 0) {
+        Serial.print("remaining tries: "); Serial.println(retries);
+      }
       OregonTHN128_Read(&oregonData);
       printReceivedData(&oregonData);
       foundLocalTemp = true;
     }
+    delay(retryDelayMs);
   }
-
   Serial.println("End fetch local temp loop");
 
   if (foundLocalTemp) {
-    LocalTemp localTemp;
     fillLocalTempFromJson(&oregonData, &localTemp);
-    displayPartialLocalTemp(&localTemp);
   }
   #endif
+
+  return foundLocalTemp;
 }
 
 
 void loop() {
+  enum state st = RENDER_1;
   display.setFullWindow();
   display.firstPage();
 
@@ -158,42 +166,56 @@ void loop() {
     boolean wordsSuccess = fetchWordsData();
 
     do {
-      display.fillScreen(GxEPD_WHITE);
+      Serial.printf("State: %i\n", st);
 
-      if (weatherSuccess) {
-        displayWeather(&weather);
-        displayUpdatedTime(&weather);
+      do {
+        display.fillScreen(GxEPD_WHITE);
+
+        if (weatherSuccess) {
+          displayWeather(&weather, &localTemp);
+          displayUpdatedTime(&weather);
+        } else {
+          displayWeatherError("Error: weather");
+        }
+
+        if (eventsSuccess) {
+          displayEvents(&events);
+        } else {
+          displayCalendarError("Error: calendar");
+        }
+
+        if (linkySuccess) {
+          displayLinkyData(&daily, &power, &metadata);
+        } else {
+          displayGraphError("Error: linky");
+        }
+
+        if (bandwidthSuccess) {
+          displayBandwidthData(&bandwidthData);
+        } else {
+          displayGraphError("Error: bandwidth");
+        }
+
+        if (wordsSuccess) {
+          displayWords(&words);
+        } else {
+          displayWordsError("Error: word of the day");
+        }
+
+      } while (display.nextPage());
+
+      if (st == RENDER_2) {
+        st = RENDER_END;
       } else {
-        displayWeatherError("Error: weather");
+        if (fetchLocalTemp()) {
+          st = RENDER_2;
+        } else {
+          st = RENDER_END;
+        }
       }
+    } while (st != RENDER_END);
 
-      if (eventsSuccess) {
-        displayEvents(&events);
-      } else {
-        displayCalendarError("Error: calendar");
-      }
 
-      if (linkySuccess) {
-        displayLinkyData(&daily, &power, &metadata);
-      } else {
-        displayGraphError("Error: linky");
-      }
-
-      if (bandwidthSuccess) {
-        displayBandwidthData(&bandwidthData);
-      } else {
-        displayGraphError("Error: bandwidth");
-      }
-
-      if (wordsSuccess) {
-        displayWords(&words);
-      } else {
-        displayWordsError("Error: word of the day");
-      }
-
-    } while (display.nextPage());
-
-    fetchAndDisplayLocalTemp();
   }
   uint64_t sleepTime = weather.currentHour == 23 ? HOUR * 7 : HOUR;
   
@@ -203,14 +225,12 @@ void loop() {
 }
 
 void sleep(uint64_t sleepTime) {
-  display.powerOff();
   display.hibernate();
+
   Serial.print("Will sleep "); 
   Serial.println(sleepTime);
   delay(SECOND);
   Serial.flush();
-  // display.hibernate();
-  display.powerOff();
 
   esp_sleep_enable_timer_wakeup((uint64_t) sleepTime * MICRO_SEC_TO_MILLI_SEC_FACTOR);
   esp_deep_sleep_start();

@@ -128,7 +128,7 @@ void drawIcon(int x, int y, char* icon) {
   }
 }
 
-void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* temp2, char* humidity) {
+void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* temp2) {
   int center = 60;
   drawTextCenterAlign(center + x, 28 + y, title, GxEPD_BLACK, &FONT_BIG);
   drawIcon(20 + x, 30 + y, icon);
@@ -140,10 +140,21 @@ void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* 
 #define WEATHER_Y 0
 #define WEATHER_HEIGHT 182
 
-void displayWeather(Weather* weather) {
-  displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1, weather->humidityH1);
-  displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD, weather->humidityD);
-  displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1, weather->humidityD1);
+void displayDayLocalTemp(int x, int y, char* title, char* icon, char* temp) {
+  int center = 60;
+  drawTextCenterAlign(center + x, 28 + y, title, GxEPD_BLACK, &FONT_BIG);
+  drawIcon(20 + x, 30 + y, icon);
+  drawTextCenterAlign(center + x, y + 140, temp, GxEPD_BLACK, &FONT_BIG);
+}
+
+void displayWeather(Weather* weather, LocalTemp* localTemp = nullptr) {
+  if (localTemp != nullptr && localTemp->temp[0] != '\0') {
+    displayDayLocalTemp(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, localTemp->temp);
+  } else {
+    displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1);
+  }
+  displayDayMinMax(WEATHER_X + 180, WEATHER_Y, "today", weather->iconD, weather->tempMinD, weather->tempMaxD);
+  displayDayMinMax(WEATHER_X + 330, WEATHER_Y, "tomorrow", weather->iconD1, weather->tempMinD1, weather->tempMaxD1);
   drawLine(WEATHER_Y + WEATHER_HEIGHT - V_MARGIN, 2, GxEPD_BLACK);
 }
 
@@ -154,21 +165,6 @@ void displayWeatherError(char* text) {
 void displayUpdatedTime(Weather* weather) {
   drawTextRightAlign(display.width() - 4, display.height() - 4, weather->updated, GxEPD_BLACK, &FONT_SMALL);
 }
-
-void displayPartialLocalTemp(LocalTemp* localTemp) {
-  int x = WEATHER_X;
-  int y = WEATHER_Y + 110;
-  int w = 155;
-  int h = 56;
-
-  display.setPartialWindow(x, y, w, h);
-  display.firstPage();
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    drawTextCenterAlign(x + 84, y + 38, localTemp->temp, GxEPD_BLACK, &FONT_BIG);
-  } while (display.nextPage());
-}
-
 
 /*
  * Calendar
@@ -333,6 +329,7 @@ void displayConsumption(uint offsetY, LinkyData* daily) {
 
 void displayMaxPower(uint offsetY, LinkyData* power) {
   for (int i = 0; i < CHART_DAYS; i++) {
+    if (power->values[i] == 0) break;
     int value = power->values[i] / 1000;
     int x = GRAPH_OFFSET_X + 4 + i * GRAPH_STEP;
     int y = offsetY + mapToYElectricity(value);

@@ -140,16 +140,18 @@ void displayDayMinMax(int x, int y, char* title, char* icon, char* temp1, char* 
 #define WEATHER_Y 0
 #define WEATHER_HEIGHT 182
 
-void displayDayLocalTemp(int x, int y, char* title, char* icon, char* temp) {
+void displayDayLocalTemp(int x, int y, char* title, char* icon, char* temp, bool lowBattery = false) {
   int center = 60;
   drawTextCenterAlign(center + x, 28 + y, title, GxEPD_BLACK, &FONT_BIG);
   drawIcon(20 + x, 30 + y, icon);
-  drawTextCenterAlign(center + x, y + 140, temp, GxEPD_BLACK, &FONT_BIG);
+  char tempWithBattery[12];
+  sprintf(tempWithBattery, "%s%s", temp, lowBattery ? "!" : "");
+  drawTextCenterAlign(center + x, y + 140, tempWithBattery, GxEPD_BLACK, &FONT_BIG);
 }
 
 void displayWeather(Weather* weather, LocalTemp* localTemp = nullptr) {
   if (localTemp != nullptr && localTemp->temp[0] != '\0') {
-    displayDayLocalTemp(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, localTemp->temp);
+    displayDayLocalTemp(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, localTemp->temp, localTemp->lowBattery);
   } else {
     displayDayMinMax(WEATHER_X + 20, WEATHER_Y, "now", weather->iconH1, weather->feelsLikeH1, weather->tempH1);
   }

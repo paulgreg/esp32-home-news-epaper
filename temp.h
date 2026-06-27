@@ -5,6 +5,7 @@
 
 struct LocalTemp {
   char temp[10];
+  bool lowBattery;
 };
 
 #ifdef RF_RX_PIN
@@ -40,5 +41,6 @@ void fillLocalTempFromJson(OregonTHN128Data_t *oregonData, LocalTemp* localTemp)
   }
 
   sprintf(localTemp->temp, "%s%d.%d\xb0", (negativeTemperature ? "-" : ""), (tempAbs / 10), (tempAbs % 10)); 
+  localTemp->lowBattery = oregonData->lowBattery;
 }
 #endif

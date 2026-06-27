@@ -118,6 +118,7 @@ boolean fetchWordsData() {
 boolean fetchLocalTemp() {
   boolean foundLocalTemp = false;
 
+  Serial.printf("RF_RX_PIN: %d\n", RF_RX_PIN);
   #ifdef RF_RX_PIN
   // get local temperature from oregon sensor
   const uint32_t maxRetries = 180 * 100; // 180 seconds with 10ms delay
@@ -126,10 +127,11 @@ boolean fetchLocalTemp() {
 
   Serial.println("Try to fetch local temp");
   for (uint32_t retries = maxRetries; retries > 0 && !foundLocalTemp; retries--) {
-    if (OregonTHN128_Available()) {
-      if (retries % 100 == 0) {
-        Serial.print("remaining tries: "); Serial.println(retries);
-      }
+    bool avail = OregonTHN128_Available();
+    if (retries % 100 == 0) {
+      Serial.printf("Available: %d ; remaining tries: %d\n", avail, retries);
+    }
+    if (avail) {
       OregonTHN128_Read(&oregonData);
       printReceivedData(&oregonData);
       foundLocalTemp = true;

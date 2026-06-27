@@ -38,7 +38,7 @@ You’ll need to copy `parameters.h.dist` to `parameters.h` and change it to you
 
 ### 433 Mhz transmitter mapping
 
-  - pin 34 to D0
+  - pin 22 to D0
   - 3v3
   - GND
 

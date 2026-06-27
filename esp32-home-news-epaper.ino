@@ -121,7 +121,7 @@ boolean fetchLocalTemp() {
   Serial.printf("RF_RX_PIN: %d\n", RF_RX_PIN);
   #ifdef RF_RX_PIN
   // get local temperature from oregon sensor
-  const uint32_t maxRetries = 180 * 100; // 180 seconds with 10ms delay
+  const uint32_t maxRetries = 60 * 100; // 60 seconds with 10ms delay
   const uint32_t retryDelayMs = 10;
   OregonTHN128Data_t oregonData;
 
@@ -150,7 +150,6 @@ boolean fetchLocalTemp() {
 
 
 void loop() {
-  enum state st = RENDER_1;
   display.setFullWindow();
   display.firstPage();
 
@@ -166,60 +165,46 @@ void loop() {
     boolean bandwidthSuccess = fetchBandwidthData();
     boolean linkySuccess = fetchLinkyData();
     boolean wordsSuccess = fetchWordsData();
+    fetchLocalTemp();
 
     do {
-      Serial.printf("State: %i\n", st);
+      display.fillScreen(GxEPD_WHITE);
 
-      do {
-        display.fillScreen(GxEPD_WHITE);
-
-        if (weatherSuccess) {
-          displayWeather(&weather, &localTemp);
-          displayUpdatedTime(&weather);
-        } else {
-          displayWeatherError("Error: weather");
-        }
-
-        if (eventsSuccess) {
-          displayEvents(&events);
-        } else {
-          displayCalendarError("Error: calendar");
-        }
-
-        if (linkySuccess) {
-          displayLinkyData(&daily, &power, &metadata);
-        } else {
-          displayGraphError("Error: linky");
-        }
-
-        if (bandwidthSuccess) {
-          displayBandwidthData(&bandwidthData);
-        } else {
-          displayGraphError("Error: bandwidth");
-        }
-
-        if (wordsSuccess) {
-          displayWords(&words);
-        } else {
-          displayWordsError("Error: word of the day");
-        }
-
-      } while (display.nextPage());
-
-      if (st == RENDER_2) {
-        st = RENDER_END;
+      if (weatherSuccess) {
+        displayWeather(&weather, &localTemp);
+        displayUpdatedTime(&weather);
       } else {
-        if (fetchLocalTemp()) {
-          st = RENDER_2;
-        } else {
-          st = RENDER_END;
-        }
+        displayWeatherError("Error: weather");
       }
-    } while (st != RENDER_END);
 
+      if (eventsSuccess) {
+        displayEvents(&events);
+      } else {
+        displayCalendarError("Error: calendar");
+      }
 
+      if (linkySuccess) {
+        displayLinkyData(&daily, &power, &metadata);
+      } else {
+        displayGraphError("Error: linky");
+      }
+
+      if (bandwidthSuccess) {
+        displayBandwidthData(&bandwidthData);
+      } else {
+        displayGraphError("Error: bandwidth");
+      }
+
+      if (wordsSuccess) {
+        displayWords(&words);
+      } else {
+        displayWordsError("Error: word of the day");
+      }
+
+    } while (display.nextPage());
   }
-  uint64_t sleepTime = weather.currentHour == 23 ? HOUR * 7 : HOUR;
+  
+  uint64_t sleepTime = weather.currentHour == 0 ? HOUR * 6 : 30 * MINUTE;
   
   sleep(sleepTime);
   Serial.println("SLEEP FAILED");

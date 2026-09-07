@@ -121,7 +121,7 @@ boolean fetchLocalTemp() {
   Serial.printf("RF_RX_PIN: %d\n", RF_RX_PIN);
   #ifdef RF_RX_PIN
   // get local temperature from oregon sensor
-  const uint32_t maxRetries = 60 * 100; // 60 seconds with 10ms delay
+  const uint32_t maxRetries = 120 * 100; // 60 seconds with 10ms delay
   const uint32_t retryDelayMs = 10;
   OregonTHN128Data_t oregonData;
 

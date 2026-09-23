@@ -1,3 +1,6 @@
+const uint32_t HTTP_CONNECT_TIMEOUT_MS = 10000;
+const uint32_t HTTP_READ_TIMEOUT_MS = 10000;
+
 boolean connectToWifi() {
   Serial.print("\nconnecting to ");
   Serial.println(WIFI_SSID);
@@ -29,17 +32,24 @@ String httpGet(const char* url, const char* login, const char* password) {
     Serial.print("Connecting to "); Serial.println(url);
     HTTPClient http;
     http.begin(url);
+    http.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+    http.setTimeout(HTTP_READ_TIMEOUT_MS);
     if (strlen(login) > 0 && strlen(password) > 0) http.setAuthorization(login, password);
     int httpCode = http.GET();
      Serial.print("HTTP code : "); Serial.println(httpCode);
-    if (httpCode > 0) {
+    if (httpCode >= 200 && httpCode < 300) {
       s = http.getString();
       Serial.print("Reponse length : "); Serial.println(s.length());
+      if (s.length() == 0) {
+        Serial.println("[HTTP] GET... failed, empty body");
+      }
       if (DEBUG) Serial.println(s);
     } else {
       Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
     }
     http.end();
+  } else {
+    Serial.println("[HTTP] GET... failed, wifi not connected");
   }  
   return s;
 }

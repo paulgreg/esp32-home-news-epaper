@@ -15,14 +15,16 @@ boolean fillBandwidthDataFromJson(JSONVar json, BandwidthData* data) {
     return false;
   }
 
-  sprintf(data->unit, "%s", (const char*) json["reading_type"]["unit"]);
+  const char* unit = (const char*) json["reading_type"]["unit"];
+  snprintf(data->unit, sizeof(data->unit), "%s", unit != nullptr ? unit : "");
   int size = json["interval_reading"].length();
 
   Serial.printf("bandwidth data length: %i\n", size);
   if (size < CHART_DAYS) return false;
 
   for (int i = 0, id = size - CHART_DAYS; i < CHART_DAYS; i++, id++) {
-    sprintf(data->days[i], "%s", (const char*) json["interval_reading"][id]["date"]);
+    const char* date = (const char*) json["interval_reading"][id]["date"];
+    snprintf(data->days[i], sizeof(data->days[i]), "%s", date != nullptr ? date : "");
     data->values[i] = atoi((const char*) json["interval_reading"][id]["value"]);
     Serial.printf("bandwidth[%i] - %s -> %i\n", id, data->days[i], data->values[i]);
   }

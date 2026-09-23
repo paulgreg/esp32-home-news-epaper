@@ -28,6 +28,12 @@ struct LinkyMetaData {
 
 // Helper function to extract date part from timestamp (handles both "YYYY-MM-DD" and "YYYY-MM-DD HH:MM:SS")
 void extractDatePart(char* dest, const char* source, size_t destSize) {
+  if (destSize == 0) return;
+  if (source == nullptr) {
+    dest[0] = '\0';
+    return;
+  }
+
   // Copy up to 10 characters (YYYY-MM-DD) or until space/end
   size_t i = 0;
   while (i < destSize - 1 && source[i] != '\0' && source[i] != ' ' && i < 10) {
@@ -47,7 +53,8 @@ boolean fillLinkyDataFromJson(JSONVar json, LinkyData* data, BandwidthData* band
     return false;
   }
 
-   sprintf(data->unit, "%s", (const char*) json["reading_type"]["unit"]);
+   const char* unit = (const char*) json["reading_type"]["unit"];
+   snprintf(data->unit, sizeof(data->unit), "%s", unit != nullptr ? unit : "");
    int size = json["interval_reading"].length();
 
    Serial.printf("linky data length: %i\n", size);
@@ -56,8 +63,8 @@ boolean fillLinkyDataFromJson(JSONVar json, LinkyData* data, BandwidthData* band
      // Use bandwidth dates as reference
      Serial.println("Using bandwidth reference for date alignment");
      
-     for (int i = 0; i < CHART_DAYS; i++) {
-       sprintf(data->days[i], "%s", bandwidthRef->days[i]);
+      for (int i = 0; i < CHART_DAYS; i++) {
+        snprintf(data->days[i], sizeof(data->days[i]), "%s", bandwidthRef->days[i]);
        
        // Find matching date in Linky data
        data->values[i] = 0; // Default to 0 if not found
@@ -81,11 +88,12 @@ boolean fillLinkyDataFromJson(JSONVar json, LinkyData* data, BandwidthData* band
      // Original behavior - take last CHART_DAYS entries
      if (size < CHART_DAYS) return false;
 
-     for (int i = 0, id = size - CHART_DAYS; i < CHART_DAYS; i++, id++) {
-       sprintf(data->days[i], "%s", (const char*) json["interval_reading"][id]["date"]);
-       data->values[i] = atoi((const char*) json["interval_reading"][id]["value"]);
-       Serial.printf("linky[%i] - %s -> %i\n", id, data->days[i], data->values[i]);
-     }
+      for (int i = 0, id = size - CHART_DAYS; i < CHART_DAYS; i++, id++) {
+        const char* date = (const char*) json["interval_reading"][id]["date"];
+        snprintf(data->days[i], sizeof(data->days[i]), "%s", date != nullptr ? date : "");
+        data->values[i] = atoi((const char*) json["interval_reading"][id]["value"]);
+        Serial.printf("linky[%i] - %s -> %i\n", id, data->days[i], data->values[i]);
+      }
    }
    
    Serial.printf("Parsing end\n");
@@ -98,8 +106,17 @@ boolean fillLinkyMetaDataFromJson(JSONVar json, LinkyMetaData* data) {
     return false;
   }
 
+  const char* priceStr = (const char*) json["price"];
+  if (priceStr == nullptr) {
+    Serial.println("fillLinkyMetaDataFromJson: invalid price value");
+    return false;
+  }
+
   double price;
-  sscanf(json["price"], "%lf", &price);
+  if (sscanf(priceStr, "%lf", &price) != 1) {
+    Serial.println("fillLinkyMetaDataFromJson: failed to parse price");
+    return false;
+  }
   data->price = price;
   Serial.println("Price");
   Serial.println(data->price);

@@ -26,4 +26,4 @@
 
 #define WORDS_URL "url-to/word-of-the-day.json"
 
-#define BANDWIDTH_URL = "url-to/consumption.json"
+#define BANDWIDTH_URL "url-to/consumption.json"

@@ -31,9 +31,7 @@ SPIClass hspi(HSPI);
 const uint64_t SECOND = 1000;
 const uint64_t MINUTE = 60 * SECOND;
 const uint64_t HOUR = 60 * MINUTE;
-const uint64_t MICRO_SEC_TO_MILLI_SEC_FACTOR = 1000;
-
-enum state { RENDER_1 = 1, RENDER_2 = 2, RENDER_END = 3 };
+const uint64_t MILLI_SEC_TO_MICRO_SEC_FACTOR = 1000;
 
 Weather weather;
 Events events;
@@ -65,61 +63,42 @@ void setup() {
   display.setRotation(1);
 }
 
-boolean fetchWeatherData() {
+boolean fetchWithRetry(boolean (*fetchFn)()) {
   uint retries = MAX_RETRIES;
-  boolean success = false;
-  while(!success && (retries-- > 0)) {
+  while (retries-- > 0) {
     delay(RETRIES_DELAY);
-    success = getWeatherJSON(&weather);
+    if (fetchFn()) {
+      return true;
+    }
   }
-  return success;
+  return false;
+}
+
+boolean fetchWeatherData() {
+  return fetchWithRetry([]() { return getWeatherJSON(&weather); });
 }
 
 boolean fetchCalendarData() {
-  uint retries = MAX_RETRIES;
-  boolean success = false;
-  while(!success && (retries-- > 0)) {
-    delay(RETRIES_DELAY);
-    success = getCalendarJSON(&events);
-  }
-  return success;
+  return fetchWithRetry([]() { return getCalendarJSON(&events); });
 }
 
 boolean fetchBandwidthData() {
-  uint retries = MAX_RETRIES;
-  boolean success = false;
-  while(!success && (retries-- > 0)) {
-    delay(RETRIES_DELAY);
-    success = getBandwidthJSON(&bandwidthData);
-  }
-  return success;
+  return fetchWithRetry([]() { return getBandwidthJSON(&bandwidthData); });
 }
 
 boolean fetchLinkyData() {
-  uint retries = MAX_RETRIES;
-  boolean success = false;
-  while(!success && (retries-- > 0)) {
-    delay(RETRIES_DELAY);
-    success = getLinkyJSON(&daily, &power, &metadata, &bandwidthData);
-  }
-  return success;
+  return fetchWithRetry([]() { return getLinkyJSON(&daily, &power, &metadata, &bandwidthData); });
 }
 
 boolean fetchWordsData() {
-  uint retries = MAX_RETRIES;
-  boolean success = false;
-  while(!success && (retries-- > 0)) {
-    delay(RETRIES_DELAY);
-    success = getWordsJSON(&words);
-  }
-  return success;
+  return fetchWithRetry([]() { return getWordsJSON(&words); });
 }
 
 boolean fetchLocalTemp() {
   boolean foundLocalTemp = false;
 
-  Serial.printf("RF_RX_PIN: %d\n", RF_RX_PIN);
   #ifdef RF_RX_PIN
+  Serial.printf("RF_RX_PIN: %d\n", RF_RX_PIN);
   // get local temperature from oregon sensor
   const uint32_t maxRetries = 120 * 100; // 60 seconds with 10ms delay
   const uint32_t retryDelayMs = 10;
@@ -219,7 +198,7 @@ void sleep(uint64_t sleepTime) {
   delay(SECOND);
   Serial.flush();
 
-  esp_sleep_enable_timer_wakeup((uint64_t) sleepTime * MICRO_SEC_TO_MILLI_SEC_FACTOR);
+  esp_sleep_enable_timer_wakeup((uint64_t) sleepTime * MILLI_SEC_TO_MICRO_SEC_FACTOR);
   esp_deep_sleep_start();
 
   delay(MINUTE);

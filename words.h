@@ -21,9 +21,17 @@ boolean fillWordsFromJson(JSONVar json, Words* data) {
     return false;
   }
 
+  if (json["languages"].length() < NB_LANG || json["translations"].length() < NB_LANG) {
+    Serial.println("fillWordsFromJson: invalid languages/translations length");
+    return false;
+  }
+
   for (int i = 0; i < NB_LANG; i++) {
-    sprintf(data->languages[i], "%s", (const char*) json["languages"][i]);
-    sprintf(data->translations[i], "%s", (const char*) json["translations"][i]);
+    const char* lang = (const char*) json["languages"][i];
+    const char* translation = (const char*) json["translations"][i];
+
+    snprintf(data->languages[i], sizeof(data->languages[i]), "%s", lang != nullptr ? lang : "");
+    snprintf(data->translations[i], sizeof(data->translations[i]), "%s", translation != nullptr ? translation : "");
     decodeEscapeSequences(data->translations[i]);
   }
   

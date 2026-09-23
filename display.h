@@ -145,7 +145,7 @@ void displayDayLocalTemp(int x, int y, char* title, char* icon, char* temp, bool
   drawTextCenterAlign(center + x, 28 + y, title, GxEPD_BLACK, &FONT_BIG);
   drawIcon(20 + x, 30 + y, icon);
   char tempWithBattery[12];
-  sprintf(tempWithBattery, "%s%s", temp, lowBattery ? "!" : "");
+  snprintf(tempWithBattery, sizeof(tempWithBattery), "%s%s", temp, lowBattery ? "!" : "");
   drawTextCenterAlign(center + x, y + 140, tempWithBattery, GxEPD_BLACK, &FONT_BIG);
 }
 
@@ -175,13 +175,14 @@ void drawDateAndCalendar(int x, int y, char* fulldate, char* cal, boolean isToda
   char calendarAndDate[25];
   char shortdate[14];
   extractDate(fulldate, shortdate);
-  sprintf(calendarAndDate, "%s - %s", shortdate, cal);
+  snprintf(calendarAndDate, sizeof(calendarAndDate), "%s - %s", shortdate, cal);
   drawTextCenterAlign(x, y, calendarAndDate, isToday ? GxEPD_BLACK : GxEPD_RED, &FONT_NORMAL);
 }
 
 void drawSummary(int x, int y, char* text, boolean isToday) {
   char summary[64];
   strncpy(summary, text, 63);
+  summary[sizeof(summary) - 1] = '\0';
   drawTextCenterAlign(x, y, summary, isToday ? GxEPD_BLACK : GxEPD_RED, &FONT_BIG);
 }
 
@@ -260,7 +261,7 @@ void displayPrices(int offsetY, LinkyData* daily, double kmWPerHourPrice) {
       drawText(x, y, "n/a", GxEPD_RED, &FONT_SMALL);
     } else {
       double p = daily->values[i] * kmWPerHourPrice / 1000;
-      sprintf(price, "%.1lf", p);
+      snprintf(price, sizeof(price), "%.1lf", p);
       Serial.printf("price: %s\n", price);
       drawText(x, y, price, p >= LINKY_PRICE_THRESHOLD ? GxEPD_BLACK : GxEPD_RED, &FONT_SMALL);
     }
@@ -302,7 +303,7 @@ void displayScale(uint offsetY) {
   Serial.println("Scale");
   for (int i = 0; i <= 15; i += 3) {
     int y = offsetY + mapToYElectricity(i);
-    sprintf(s, "%2dk", i);
+    snprintf(s, sizeof(s), "%2dk", i);
     drawText(LINKY_X, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
     display.fillRect(38, y, 410, 2, GxEPD_RED);
   }
@@ -314,7 +315,7 @@ void displayBandwidthScale(uint offsetY) {
   // Draw scale on right side with 10 Gb increments (0, 10, 20, 30, 40, 50)
   for (int i = 0; i <= 50; i += 10) {
     int y = offsetY + mapToYBandwidth(i * 1000); // Convert Gb back to Mb for mapping
-    sprintf(s, "%2d", i);
+    snprintf(s, sizeof(s), "%2d", i);
     drawTextRightAlign(display.width() - 4, 5 + y, s, GxEPD_BLACK, &FONT_SMALL);
   }
 }

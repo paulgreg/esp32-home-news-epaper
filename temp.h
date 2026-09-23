@@ -40,7 +40,7 @@ void fillLocalTempFromJson(OregonTHN128Data_t *oregonData, LocalTemp* localTemp)
       tempAbs *= -1;
   }
 
-  sprintf(localTemp->temp, "%s%d.%d\xb0", (negativeTemperature ? "-" : ""), (tempAbs / 10), (tempAbs % 10)); 
+  snprintf(localTemp->temp, sizeof(localTemp->temp), "%s%d.%d\xb0", (negativeTemperature ? "-" : ""), (tempAbs / 10), (tempAbs % 10)); 
   localTemp->lowBattery = oregonData->lowBattery;
 }
 #endif

@@ -13,12 +13,17 @@ struct Events {
 };
 
 void fillEventsFromJson(JSONVar json, Events* events) {
+  events->size = 0;
   int size = json.length();
   for (int i = 0; i < size && i < MAX_EVENTS; i++) {
+    const char* date = (const char*) json[i]["dateStart"];
+    const char* calendar = (const char*) json[i]["calendar"];
+    const char* summary = (const char*) json[i]["summary"];
+
     events->isToday[i] = json[i]["isToday"];
-    sprintf(events->date[i], "%s", (const char*) json[i]["dateStart"]);
-    sprintf(events->calendar[i], "%s", (const char*) json[i]["calendar"]);
-    sprintf(events->summary[i], "%s", (const char*) json[i]["summary"]);
+    snprintf(events->date[i], sizeof(events->date[i]), "%s", date != nullptr ? date : "");
+    snprintf(events->calendar[i], sizeof(events->calendar[i]), "%s", calendar != nullptr ? calendar : "");
+    snprintf(events->summary[i], sizeof(events->summary[i]), "%s", summary != nullptr ? summary : "");
     decodeEscapeSequences(events->calendar[i]);
     decodeEscapeSequences(events->summary[i]);
     events->size = i + 1;

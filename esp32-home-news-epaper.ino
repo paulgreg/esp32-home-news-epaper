@@ -183,7 +183,7 @@ void loop() {
     } while (display.nextPage());
   }
   
-  uint64_t sleepTime = weather.currentHour == 0 ? HOUR * 6 : 30 * MINUTE;
+  uint64_t sleepTime = weather.currentHour == 0 ? HOUR * 5 : 20 * MINUTE;
   
   sleep(sleepTime);
   Serial.println("SLEEP FAILED");
